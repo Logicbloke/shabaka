@@ -1,0 +1,188 @@
+import { create } from 'zustand'
+import {
+  getIdentityRecord,
+  openShabakaDb,
+  putIdentityRecord,
+  type ShabakaDb,
+} from '../core/db'
+import {
+  exportIdentity,
+  generateIdentity,
+  importIdentity,
+  recordNeedsPassphrase,
+  toIdentityRecord,
+  unlockIdentity,
+} from '../core/identity'
+import { appendLocal } from '../core/logstore'
+import { sealDm } from '../core/dm'
+import { coreEvents, type StrategyState } from '../core/events'
+import type { Content, Identity, MessageType, StoredMessage } from '../core/types'
+
+export type View =
+  | { name: 'feed' }
+  | { name: 'thread'; root: string }
+  | { name: 'profile'; author: string }
+  | { name: 'follows' }
+  | { name: 'dms' }
+  | { name: 'dm'; other: string }
+  | { name: 'security' }
+
+export type Phase = 'loading' | 'fresh' | 'locked' | 'ready'
+
+export type Lang = 'en' | 'ar'
+
+function detectLang(): Lang {
+  try {
+    const saved = localStorage.getItem('shabaka-lang')
+    if (saved === 'ar' || saved === 'en') return saved
+    return navigator.language.startsWith('ar') ? 'ar' : 'en'
+  } catch {
+    return 'en'
+  }
+}
+
+function applyDir(lang: Lang): void {
+  if (typeof document === 'undefined') return
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr'
+  document.documentElement.lang = lang
+}
+
+interface AppState {
+  phase: Phase
+  identity: Identity | null
+  view: View
+  /** bumped on every ingested message; components re-query off this */
+  dataVersion: number
+  peers: Record<string, { state: StrategyState; peerCount: number }>
+  lang: Lang
+}
+
+export const useApp = create<AppState>(() => ({
+  phase: 'loading',
+  identity: null,
+  view: { name: 'feed' },
+  dataVersion: 0,
+  peers: {},
+  lang: detectLang(),
+}))
+
+export function setLang(lang: Lang): void {
+  useApp.setState({ lang })
+  try {
+    localStorage.setItem('shabaka-lang', lang)
+  } catch {
+    // private mode etc. — language just won't persist
+  }
+  applyDir(lang)
+}
+
+let db: ShabakaDb | null = null
+
+export function getDb(): ShabakaDb {
+  if (!db) throw new Error('db not ready')
+  return db
+}
+
+function me(): Identity {
+  const id = useApp.getState().identity
+  if (!id) throw new Error('no identity')
+  return id
+}
+
+export function navigate(view: View): void {
+  useApp.setState({ view })
+}
+
+export async function initApp(): Promise<void> {
+  applyDir(useApp.getState().lang)
+  db = await openShabakaDb()
+
+  coreEvents.on('message-ingested', () => {
+    useApp.setState((s) => ({ dataVersion: s.dataVersion + 1 }))
+  })
+  coreEvents.on('peer-status', (p) => {
+    useApp.setState((s) => ({
+      peers: { ...s.peers, [p.strategy]: { state: p.state, peerCount: p.peerCount } },
+    }))
+  })
+
+  const record = await getIdentityRecord(db)
+  if (!record) {
+    useApp.setState({ phase: 'fresh' })
+  } else if (recordNeedsPassphrase(record)) {
+    useApp.setState({ phase: 'locked' })
+  } else {
+    ready(await unlockIdentity(record))
+  }
+}
+
+function ready(identity: Identity): void {
+  useApp.setState({ identity, phase: 'ready' })
+  void onReady(identity)
+}
+
+/** Phase C replaces this with network startup; local-only for now. */
+let onReady: (identity: Identity) => Promise<void> = async () => {}
+export function setOnReady(fn: (identity: Identity) => Promise<void>): void {
+  onReady = fn
+}
+
+// ---- onboarding actions ----
+
+/** Generate but do NOT persist — the UI shows the backup string first. */
+export function prepareIdentity(): { identity: Identity; backup: string } {
+  const identity = generateIdentity()
+  return { identity, backup: exportIdentity(identity) }
+}
+
+export async function commitIdentity(identity: Identity, passphrase?: string): Promise<void> {
+  await putIdentityRecord(getDb(), await toIdentityRecord(identity, passphrase || undefined))
+  ready(identity)
+}
+
+export async function importAndCommit(backup: string, passphrase?: string): Promise<void> {
+  await commitIdentity(importIdentity(backup), passphrase)
+}
+
+export async function unlock(passphrase: string): Promise<void> {
+  const record = await getIdentityRecord(getDb())
+  if (!record) throw new Error('no identity record')
+  ready(await unlockIdentity(record, passphrase))
+}
+
+// ---- compose actions ----
+
+async function append(type: MessageType, content: Content): Promise<StoredMessage> {
+  const msg = await appendLocal(getDb(), me(), type, content)
+  coreEvents.emit('message-ingested', msg)
+  coreEvents.emit('local-append', msg)
+  return msg
+}
+
+export async function composePost(text: string): Promise<void> {
+  await append('post', { text })
+}
+
+export async function composeReply(root: string, parent: string, text: string): Promise<void> {
+  await append('reply', { text, root, parent })
+}
+
+export async function reactTo(target: string, emoji: string): Promise<void> {
+  await append('reaction', { target, emoji })
+}
+
+export async function saveProfile(name: string, bio: string): Promise<void> {
+  await append('profile', { name, bio })
+}
+
+export async function followKey(target: string): Promise<void> {
+  await append('follow', { target })
+}
+
+export async function unfollowKey(target: string): Promise<void> {
+  await append('unfollow', { target })
+}
+
+export async function sendDm(to: string, text: string): Promise<void> {
+  await append('dm', sealDm(me(), to, text))
+}
