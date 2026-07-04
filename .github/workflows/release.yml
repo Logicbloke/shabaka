@@ -1,0 +1,33 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run test
+      - run: bun run build # BASE_PATH defaults to /, right for local serving
+      - run: bun run build:single
+      - name: Package artifacts
+        run: |
+          cd dist && zip -r ../shabaka-static.zip . && cd ..
+          cp dist-single/shabaka.html shabaka.html
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "Shabaka $GITHUB_REF_NAME" \
+            --notes "**shabaka.html** — download and double-click. Runs entirely in your browser, no installation. | حمّل الملف وافتحه بنقرة مزدوجة، يعمل في المتصفح دون أي تثبيت.
+
+          **shabaka-static.zip** — unzip and serve with any static file server. | فك الضغط وقدّمه عبر أي خادم ملفات ثابتة." \
+            shabaka.html shabaka-static.zip

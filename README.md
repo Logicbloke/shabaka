@@ -1,11 +1,85 @@
-# Shabaka
+# شبكة | Shabaka
+
+<div dir="rtl">
+
+## بالعربية
+
+**شبكة** هي شبكة اجتماعية من نظير إلى نظير تعمل بالكامل داخل المتصفح. لا خوادم، لا حسابات، لا شركة. هويتك مفتاح تشفير يولَّد في متصفحك؛ كل رسالة تنشرها موقَّعة رقميًا؛ والأقران يتناقلون سجلات بعضهم البعض، فتصل منشوراتك إلى متابعيك حتى وأنت غير متصل. حجب موقع أو خادم واحد لا يوقف الشبكة — التطبيق نفسه ملف ثابت يمكن لأي شخص نسخه واستضافته في أي مكان.
+
+### طرق التشغيل
+
+لا تحتاج إلى git ولا Node ولا أي أدوات برمجية — يكفي متصفح حديث (كروم أو فايرفوكس):
+
+1. **من الرابط مباشرة (الأسهل):**
+افتح <https://logicbloke.github.io/shabaka/>
+
+2. **ملف واحد تفتحه بنقرة مزدوجة:**
+حمّل [`shabaka.html`](https://github.com/Logicbloke/shabaka/releases/latest/download/shabaka.html) من صفحة الإصدارات، ثم افتحه في متصفحك بنقرة مزدوجة. التطبيق كامل داخل ملف واحد، ويمكن نقله على وصلة USB ومشاركته دون إنترنت.
+
+3. **خادم ملفات محلي:**
+حمّل [`shabaka-static.zip`](https://github.com/Logicbloke/shabaka/releases/latest/download/shabaka-static.zip)، فك الضغط، ثم شغّل داخل المجلد أي خادم ملفات ثابتة، مثلًا:
+`python3 -m http.server 8080`
+وافتح <http://localhost:8080>
+
+4. **للمطورين (من المصدر):**
+يتطلب [Bun](https://bun.sh) — ثم:
+`git clone git@github.com:Logicbloke/shabaka.git && cd shabaka && bun install && bun run dev`
+
+### تحذير أمني مهم
+
+اقرأ هذا إن كانت سلامتك تعتمد عليه:
+
+- **عنوان IP الخاص بك مرئي لكل قرين تتصل به.** تقنية WebRTC تصل المتصفحات مباشرة ولا تعمل عبر متصفح Tor. استخدم VPN تثق به إن كان هذا يهمّك.
+- كل المحتوى غير الخاص (المنشورات، المتابعات، التفاعلات) **علني ودائم** — لا يوجد حذف.
+- الرسائل الخاصة مشفّرة، لكن بياناتها الوصفية (مع من، متى، كم) علنية، ولا سرّية أمامية لها.
+- مفتاحك يعيش في متصفحك؛ البرمجيات الخبيثة قادرة على سرقته. فعّل عبارة المرور عند الإعداد.
+
+التفاصيل الكاملة في صفحة «الأمان» داخل التطبيق.
+
+</div>
+
+---
+
+## English
 
 A peer-to-peer social network that runs entirely in the browser. No servers,
 no accounts, no company. Your identity is an Ed25519 keypair; every message
 you publish is signed; peers replicate each other's logs so your posts reach
-your followers even while you're offline.
+your followers even while you're offline. Blocking any one site or server
+does not stop the network — the app itself is a static file anyone can copy
+and host anywhere.
 
-## How it works
+### Ways to run it
+
+End users need **no git, no Node, no tooling** — just a modern browser
+(Chrome or Firefox):
+
+1. **Hosted (easiest):** open <https://logicbloke.github.io/shabaka/>
+
+2. **Single file, double-click:** download
+   [`shabaka.html`](https://github.com/Logicbloke/shabaka/releases/latest/download/shabaka.html)
+   from the Releases page and open it in your browser. The whole app is one
+   file — it can travel on a USB stick and be shared without internet.
+
+3. **Local static server:** download
+   [`shabaka-static.zip`](https://github.com/Logicbloke/shabaka/releases/latest/download/shabaka-static.zip),
+   unzip, and serve the folder with any static file server, e.g.
+   `python3 -m http.server 8080`, then open <http://localhost:8080>.
+
+4. **From source (developers):** requires [Bun](https://bun.sh):
+
+   ```sh
+   git clone git@github.com:Logicbloke/shabaka.git
+   cd shabaka && bun install
+   bun run dev        # open http://localhost:5173
+   ```
+
+However you run it, all instances join the same network: discovery happens
+over public Nostr relays, MQTT brokers, and BitTorrent trackers
+([Trystero](https://github.com/dmotz/trystero)), then peers connect directly
+over WebRTC.
+
+### How it works
 
 - **Identity** — an Ed25519 keypair generated in your browser. The public key
   *is* your user ID. The seed can be exported as a one-line backup string and
@@ -16,44 +90,26 @@ your followers even while you're offline.
   Nobody can forge, alter, reorder, or truncate your log without breaking
   signatures or the hash chain.
 - **Storage** — everything lives in IndexedDB in your browser.
-- **Transport** — browsers connect directly over WebRTC. Peer discovery uses
-  [Trystero](https://github.com/dmotz/trystero) across three independent
-  public infrastructures simultaneously — Nostr relays, MQTT brokers, and
-  BitTorrent trackers — so there is no single rendezvous point to block.
 - **Store-and-forward** — when you follow someone, you replicate their log
   and *offer it to other peers*. If Alice is offline, Bob (her follower)
   relays her signed posts to Carol. Signatures make third-party relay safe.
 - **DMs** — encrypted to the recipient (X25519 ECDH + XChaCha20-Poly1305) but
   carried in your public log, so peers relay them without being able to read
   them.
+- **Languages** — full Arabic (RTL) and English UI; posts in either direction
+  render correctly regardless of UI language.
 
-## Quickstart
-
-```sh
-bun install
-bun run dev        # open http://localhost:5173
-```
-
-Open a second browser window in incognito to get a second identity, exchange
-public keys via the Follows page, and watch posts sync peer-to-peer.
-
-Env overrides (useful for development):
+### Testing
 
 ```sh
-VITE_STRATEGIES=mqtt VITE_LOCAL_BROKER=1 bun run dev   # offline: local broker only
-```
-
-## Testing
-
-```sh
-bun run test   # 54 unit tests: crypto, chain validation, gossip protocol
+bun run test   # unit tests: crypto, chain validation, gossip protocol
 bun run e2e    # Playwright: 3 browser contexts, incl. offline-relay scenario
 ```
 
 The e2e suite runs fully offline against a local MQTT broker started by
 `e2e/global-setup.ts` — no public infrastructure involved.
 
-## Threat model — read this if your safety depends on it
+### Threat model — read this if your safety depends on it
 
 What Shabaka defends against:
 
@@ -84,7 +140,7 @@ What Shabaka does **not** defend against:
 - **Sybil/spam.** Anyone can generate keys. The UI only shows authors you
   follow, which is the v1 spam defense.
 
-## Architecture
+### Architecture
 
 ```
 src/core/       framework-agnostic protocol code (no React)
@@ -98,7 +154,7 @@ src/core/       framework-agnostic protocol code (no React)
   identity.ts   keygen, backup, passphrase encryption at rest
   dm.ts         X25519 + XChaCha20-Poly1305 sealed DMs
 state/          zustand store + network glue (the only core↔UI bridge)
-ui/             React components
+ui/             React components + i18n (en/ar)
 tests/          vitest unit tests (run in Node via fake-indexeddb)
 e2e/            Playwright multi-context tests + local MQTT broker
 ```
