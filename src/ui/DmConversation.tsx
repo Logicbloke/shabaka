@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { getDmMessages } from '../core/db'
 import { openDm } from '../core/dm'
 import { sendDm, useApp } from '../state/store'
-import { formatTime, useQuery } from './hooks'
+import { useQuery } from './hooks'
+import { TimeStamp } from './TimeStamp'
 import { useT } from './i18n'
 import { cleanText } from './text'
 import { AuthorLink } from './PostCard'
@@ -35,7 +36,7 @@ export function DmConversation({ other }: { other: string }) {
           return (
             <div key={m.id} className={m.author === me.pub ? 'dm mine' : 'dm theirs'}>
               <p dir="auto">{opened ? cleanText(opened.text) : t('cantDecrypt')}</p>
-              <time>{formatTime(m.displayTs)}</time>
+              <TimeStamp ts={m.displayTs} />
             </div>
           )
         })}
