@@ -51,7 +51,12 @@ export function Security() {
         <li>{t('secN3')}</li>
         <li>{t('secN4')}</li>
         <li>{t('secN5')}</li>
+        <li>{t('secN6')}</li>
       </ul>
+
+      <p className="app-version">
+        {t('secVersion')} <bdi dir="ltr">{__APP_VERSION__}</bdi>
+      </p>
     </div>
   )
 }

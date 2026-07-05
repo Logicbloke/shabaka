@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process'
 import { readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { defineConfig, type Plugin } from 'vitest/config'
@@ -5,6 +6,27 @@ import react from '@vitejs/plugin-react'
 
 const env = (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env
 const SINGLE_FILE = env?.SINGLE_FILE === '1'
+
+// Version baked into the client so a build can tell whether it is behind the
+// latest GitHub release (see src/ui/UpdateBanner.tsx). Prefer an explicit
+// APP_VERSION (CI passes the release tag) so official builds match the tag
+// exactly; fall back to `git describe` for local builds, then package.json.
+function resolveVersion(): string {
+  if (env?.APP_VERSION) return env.APP_VERSION
+  try {
+    return execSync('git describe --tags --always --dirty', { encoding: 'utf8' }).trim()
+  } catch {
+    try {
+      const pkg = JSON.parse(readFileSync(join(__dirname, 'package.json'), 'utf8')) as {
+        version?: string
+      }
+      return pkg.version ? `v${pkg.version}` : 'unknown'
+    } catch {
+      return 'unknown'
+    }
+  }
+}
+const APP_VERSION = resolveVersion()
 
 // Strict CSP is injected only into production builds: the dev server needs
 // inline scripts for React refresh, and localhost is not the threat surface.
@@ -15,7 +37,9 @@ const CSP = [
   SINGLE_FILE ? "script-src 'unsafe-inline'" : "script-src 'self'",
   "worker-src 'self' blob:",
   "style-src 'self' 'unsafe-inline'",
-  "connect-src 'self' ws: wss:",
+  // api.github.com: best-effort release-version check (UpdateBanner). Fails
+  // silently if blocked; the app never depends on it.
+  "connect-src 'self' ws: wss: https://api.github.com",
   "img-src 'self' data:",
   "object-src 'none'",
   "base-uri 'none'",
@@ -143,6 +167,7 @@ function singleFile(): Plugin {
 
 export default defineConfig({
   base: SINGLE_FILE ? './' : (env?.BASE_PATH ?? '/'),
+  define: { __APP_VERSION__: JSON.stringify(APP_VERSION) },
   plugins: [react(), injectCsp(), ...(SINGLE_FILE ? [singleFile()] : [serviceWorker()])],
   build: SINGLE_FILE
     ? {

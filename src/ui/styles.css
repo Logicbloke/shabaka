@@ -314,6 +314,36 @@ textarea {
   line-height: 1.6;
 }
 
+.app-version {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-top: 24px;
+}
+
+.update-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: var(--panel);
+  font-size: 0.9rem;
+}
+
+.update-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.update-actions a {
+  color: var(--accent);
+}
+
 .qr-block {
   margin: 12px 0;
 }

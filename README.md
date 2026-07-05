@@ -26,6 +26,15 @@
 يتطلب [Bun](https://bun.sh) — ثم:
 `git clone git@github.com:Logicbloke/shabaka.git && cd shabaka && bun install && bun run dev`
 
+### تحديث النسخة
+
+يعرض التطبيق تلقائيًا شريطًا عند صدور إصدار جديد (يستعلم عن آخر إصدار من GitHub؛ إن حُجب ذلك يعمل التطبيق كما هو). التحديث نفسه يدويّ حسب طريقة التشغيل:
+
+1. **من الرابط:** يتحدّث تلقائيًا عند إعادة فتحه وأنت متصل — لا شيء عليك فعله.
+2. **ملف واحد:** أعد تنزيل [`shabaka.html`](https://github.com/Logicbloke/shabaka/releases/latest/download/shabaka.html) واستبدل الملف القديم.
+3. **خادم ملفات محلي:** أعد تنزيل [`shabaka-static.zip`](https://github.com/Logicbloke/shabaka/releases/latest/download/shabaka-static.zip)، وفكّ ضغطه فوق المجلد المستضاف؛ يمسح عامل الخدمة الذاكرة المؤقتة القديمة عند التحميل التالي.
+4. **من المصدر:** `git pull && bun run build`.
+
 ### تحذير أمني مهم
 
 اقرأ هذا إن كانت سلامتك تعتمد عليه:
@@ -81,6 +90,22 @@ However you run it, all instances join the same network: discovery happens
 over public Nostr relays, MQTT brokers, and BitTorrent trackers
 ([Trystero](https://github.com/dmotz/trystero)), then peers connect directly
 over WebRTC.
+
+### Keeping it up to date
+
+The app shows a banner when a newer release exists (it checks GitHub's latest
+release; if that request is blocked the app is unaffected). Applying the update
+is manual and depends on how you run it:
+
+1. **Hosted:** updates itself on the next online load — nothing to do.
+2. **Single file:** re-download
+   [`shabaka.html`](https://github.com/Logicbloke/shabaka/releases/latest/download/shabaka.html)
+   and replace the old file.
+3. **Local static server:** re-download
+   [`shabaka-static.zip`](https://github.com/Logicbloke/shabaka/releases/latest/download/shabaka-static.zip)
+   and unzip it over the served folder; the service worker evicts the old cache
+   on the next load.
+4. **From source:** `git pull && bun run build`.
 
 ### How it works
 
@@ -142,6 +167,9 @@ What Shabaka does **not** defend against:
   all user content rendered as text, passphrase encryption at rest.
 - **Sybil/spam.** Anyone can generate keys. The UI only shows authors you
   follow, which is the v1 spam defense.
+- **Update-check metadata.** To flag new releases, non-hosted builds
+  periodically contact `api.github.com`, revealing your IP to GitHub. It is
+  best-effort — block it and the app is unaffected.
 
 ### Architecture
 
