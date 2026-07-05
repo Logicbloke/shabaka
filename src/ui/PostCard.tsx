@@ -1,6 +1,7 @@
 import { getProfile, getReactions, getThread } from '../core/db'
 import { navigate, reactTo, useApp } from '../state/store'
-import { formatTime, shortKey, useQuery } from './hooks'
+import { shortKey, useQuery } from './hooks'
+import { TimeStamp } from './TimeStamp'
 import { useT } from './i18n'
 import { cleanText } from './text'
 import type { ReplyContent, StoredMessage } from '../core/types'
@@ -46,7 +47,7 @@ export function PostCard({ msg, inThread }: { msg: StoredMessage; inThread?: boo
     <article className="post">
       <div className="post-head">
         <AuthorLink author={msg.author} />
-        <time>{formatTime(msg.displayTs)}</time>
+        <TimeStamp ts={msg.displayTs} />
         {msg.type === 'reply' && !inThread && (
           <button className="link" onClick={() => navigate({ name: 'thread', root: rootId })}>
             {t('inThread')}

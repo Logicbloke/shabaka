@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { getDmMessages } from '../core/db'
 import { B64URL_RE, B64_32 } from '../core/b64'
 import { navigate, useApp } from '../state/store'
-import { formatTime, useQuery } from './hooks'
+import { useQuery } from './hooks'
+import { TimeStamp } from './TimeStamp'
 import { useT } from './i18n'
 import { AuthorLink } from './PostCard'
 import type { DmContent } from '../core/types'
@@ -45,7 +46,7 @@ export function DmList() {
         {conversations.map(([other, ts]) => (
           <li key={other} onClick={() => navigate({ name: 'dm', other })}>
             <AuthorLink author={other} />
-            <time>{formatTime(ts)}</time>
+            <TimeStamp ts={ts} />
           </li>
         ))}
       </ul>

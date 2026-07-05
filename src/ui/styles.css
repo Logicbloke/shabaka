@@ -257,6 +257,51 @@ textarea {
   color: var(--muted);
 }
 
+/* Relative timestamp with a non-intrusive absolute date/time tooltip. */
+.timestamp {
+  position: relative;
+  cursor: help;
+  outline: none;
+}
+
+.timestamp-tip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  width: max-content;
+  max-width: min(240px, 80vw);
+  padding: 5px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--text);
+  font-size: 0.72rem;
+  line-height: 1.35;
+  text-align: center;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.12s ease;
+  pointer-events: none;
+}
+
+.timestamp:focus-visible .timestamp-tip,
+.timestamp.open .timestamp-tip {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Hover reveal only on devices that actually hover. On touch, `:hover` sticks
+   after a tap and would defeat tap-to-hide — there we rely on the .open toggle. */
+@media (hover: hover) {
+  .timestamp:hover .timestamp-tip {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
 .bio {
   color: var(--muted);
 }
