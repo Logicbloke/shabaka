@@ -9,6 +9,7 @@ import { DmList } from './DmList'
 import { DmConversation } from './DmConversation'
 import { PeerStatus } from './PeerStatus'
 import { Security } from './Security'
+import { UpdateBanner } from './UpdateBanner'
 
 export function LangToggle() {
   const lang = useApp((s) => s.lang)
@@ -54,6 +55,7 @@ export function App() {
 
   return (
     <div className="app">
+      <UpdateBanner />
       <header>
         <span className="brand" onClick={() => navigate({ name: 'feed' })}>
           {t('brand')}

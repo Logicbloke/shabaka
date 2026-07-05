@@ -18,6 +18,10 @@ export const en = {
   peersOne: '1 peer',
   peersMany: '{n} peers',
 
+  updateAvailable: 'A new version ({v}) is available.',
+  updateDownload: 'Download',
+  updateDismiss: 'Dismiss',
+
   obLoading: 'Loading…',
   obIntro:
     'A peer-to-peer social network. Your identity is a cryptographic key that lives only in this browser — there is no server and no account recovery.',
@@ -111,6 +115,9 @@ export const en = {
     'DM metadata is public: who you message, when, and approximately how much. Only the content is encrypted. DMs have no forward secrecy: whoever obtains your key can read all your past DMs.',
   secN5:
     'Your key lives in this browser. Malware or a malicious browser extension can steal it. A passphrase protects the key at rest, not while the app is open.',
+  secN6:
+    'To tell you when a new version ships, the app periodically contacts GitHub (api.github.com), which reveals your IP to GitHub. It is best-effort — if that request is blocked, the app works exactly the same.',
+  secVersion: 'You are running version',
 
   qrShow: 'Show QR',
   qrHide: 'Hide QR',
@@ -144,6 +151,10 @@ export const ar: Record<TKey, string> = {
   peersLocalOnly: 'غير متصل',
   peersOne: 'قرين واحد',
   peersMany: 'الأقران: {n}',
+
+  updateAvailable: 'يتوفّر إصدار جديد ({v}).',
+  updateDownload: 'تنزيل',
+  updateDismiss: 'إغلاق',
 
   obLoading: 'جارٍ التحميل…',
   obIntro:
@@ -236,6 +247,9 @@ export const ar: Record<TKey, string> = {
     'البيانات الوصفية للرسائل الخاصة علنية: مع من تتراسل ومتى وكم تقريبًا. المحتوى وحده مشفّر. لا سرّية أمامية: من يحصل على مفتاحك يقرأ كل رسائلك السابقة.',
   secN5:
     'مفتاحك يعيش في هذا المتصفح. البرمجيات الخبيثة أو إضافات المتصفح الخبيثة يمكنها سرقته. عبارة المرور تحمي المفتاح المخزّن فقط، لا أثناء فتح التطبيق.',
+  secN6:
+    'ليُعلمك التطبيق بصدور إصدار جديد، يتصل دوريًا بـGitHub (api.github.com)، ما يكشف عنوان IP الخاص بك لـGitHub. هذا الاتصال قدر المستطاع فقط — إن حُجب، يعمل التطبيق كما هو تمامًا.',
+  secVersion: 'النسخة التي تشغّلها',
 
   qrShow: 'إظهار رمز QR',
   qrHide: 'إخفاء رمز QR',

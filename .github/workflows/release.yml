@@ -16,7 +16,11 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run test
       - run: bun run build # BASE_PATH defaults to /, right for local serving
+        env:
+          APP_VERSION: ${{ github.ref_name }}
       - run: bun run build:single
+        env:
+          APP_VERSION: ${{ github.ref_name }}
       - name: Package artifacts
         run: |
           cd dist && zip -r ../shabaka-static.zip . && cd ..
