@@ -5,6 +5,7 @@ import { shortKey, useQuery } from './hooks'
 import { useT } from './i18n'
 import { cleanText } from './text'
 import { PostCard } from './PostCard'
+import { QrCode } from './QrCode'
 
 function EditProfile({ name, bio }: { name: string; bio: string }) {
   const t = useT()
@@ -56,6 +57,7 @@ export function Profile({ author }: { author: string }) {
   const myFollows = useQuery((db) => getFollows(db, me.pub), [me.pub])
   const messages = useQuery((db) => getAuthorMessages(db, author), [author])
   const [copied, setCopied] = useState(false)
+  const [showQr, setShowQr] = useState(false)
 
   const following = (myFollows ?? []).some((f) => f.target === author && f.following)
   const posts = (messages ?? [])
@@ -86,7 +88,16 @@ export function Profile({ author }: { author: string }) {
         >
           {copied ? t('copied') : t('copyKey')}
         </button>
+        <button className="link" onClick={() => setShowQr((v) => !v)} aria-expanded={showQr}>
+          {showQr ? t('qrHide') : t('qrShow')}
+        </button>
       </div>
+      {showQr && (
+        <div className="qr-block">
+          <QrCode value={author} />
+          <p className="hint">{t('qrPubHint')}</p>
+        </div>
+      )}
       {isSelf ? (
         <EditProfile name={profile?.name ?? ''} bio={profile?.bio ?? ''} />
       ) : (
