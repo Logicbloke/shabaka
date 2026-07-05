@@ -6,7 +6,7 @@ import { useT } from './i18n'
 import { cleanText } from './text'
 import type { ReplyContent, StoredMessage } from '../core/types'
 
-export function AuthorLink({ author }: { author: string }) {
+export function AuthorLink({ author, hideKey }: { author: string; hideKey?: boolean }) {
   const profile = useQuery((db) => getProfile(db, author), [author])
   const name = cleanText(profile?.name ?? '')
   return (
@@ -17,8 +17,9 @@ export function AuthorLink({ author }: { author: string }) {
       onClick={() => navigate({ name: 'profile', author })}
     >
       {name || shortKey(author)}
-      {/* names are self-chosen and not unique — the key prefix is the identity */}
-      {name && <span className="key-suffix">{shortKey(author)}</span>}
+      {/* names are self-chosen and not unique — the key prefix is the identity.
+          Callers that render the full key alongside pass hideKey to avoid repeating it. */}
+      {name && !hideKey && <span className="key-suffix">{shortKey(author)}</span>}
     </button>
   )
 }

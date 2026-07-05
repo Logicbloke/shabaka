@@ -225,10 +225,34 @@ textarea {
 .follow-list li,
 .dm-list li {
   display: flex;
-  align-items: center;
   gap: 8px;
   padding: 8px 0;
   border-bottom: 1px solid var(--border);
+}
+
+.dm-list li {
+  align-items: center;
+}
+
+/* follow rows stack: clickable name on top, full key beneath */
+.follow-list li {
+  flex-direction: column;
+  gap: 4px;
+}
+
+.follow-row-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.follow-list .pubkey.small {
+  display: block;
+  padding: 0;
+  background: none;
+  border: none;
+  word-break: break-all;
 }
 
 .dm-list li {

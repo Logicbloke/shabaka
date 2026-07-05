@@ -72,13 +72,15 @@ export function FollowManager() {
       <ul className="follow-list">
         {active.map((f) => (
           <li key={f.target}>
-            <AuthorLink author={f.target} />
+            <div className="follow-row-head">
+              <AuthorLink author={f.target} hideKey />
+              <button className="link" onClick={() => void unfollowKey(f.target)}>
+                {t('unfollow')}
+              </button>
+            </div>
             <code className="pubkey small" dir="ltr">
               {f.target}
             </code>
-            <button className="link" onClick={() => void unfollowKey(f.target)}>
-              {t('unfollow')}
-            </button>
           </li>
         ))}
       </ul>
