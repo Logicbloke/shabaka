@@ -13,6 +13,7 @@ import {
   toIdentityRecord,
   unlockIdentity,
 } from '../core/identity'
+import { clearSession, createSession, getSessionExpiry, loadSession } from '../core/session'
 import { appendLocal } from '../core/logstore'
 import { sealDm } from '../core/dm'
 import { coreEvents, type StrategyState } from '../core/events'
@@ -153,7 +154,9 @@ export async function initApp(): Promise<void> {
   if (!record) {
     useApp.setState({ phase: 'fresh' })
   } else if (recordNeedsPassphrase(record)) {
-    useApp.setState({ phase: 'locked' })
+    const resumed = await loadSession(conn).catch(() => null)
+    if (resumed && resumed.pub === record.pub) ready(resumed)
+    else useApp.setState({ phase: 'locked' })
   } else {
     ready(await unlockIdentity(record))
   }
@@ -178,19 +181,49 @@ export function prepareIdentity(): { identity: Identity; backup: string } {
   return { identity, backup: exportIdentity(identity) }
 }
 
-export async function commitIdentity(identity: Identity, passphrase?: string): Promise<void> {
+export async function commitIdentity(
+  identity: Identity,
+  passphrase?: string,
+  rememberMs = 0,
+): Promise<void> {
   await putIdentityRecord(getDb(), await toIdentityRecord(identity, passphrase || undefined))
+  // A session only makes sense when the key is actually encrypted at rest;
+  // without a passphrase the identity auto-unlocks anyway.
+  if (passphrase && rememberMs > 0) await createSession(getDb(), identity, rememberMs)
   ready(identity)
 }
 
-export async function importAndCommit(backup: string, passphrase?: string): Promise<void> {
-  await commitIdentity(importIdentity(backup), passphrase)
+export async function importAndCommit(
+  backup: string,
+  passphrase?: string,
+  rememberMs = 0,
+): Promise<void> {
+  await commitIdentity(importIdentity(backup), passphrase, rememberMs)
 }
 
-export async function unlock(passphrase: string): Promise<void> {
+export async function unlock(passphrase: string, rememberMs = 0): Promise<void> {
   const record = await getIdentityRecord(getDb())
   if (!record) throw new Error('no identity record')
-  ready(await unlockIdentity(record, passphrase))
+  const identity = await unlockIdentity(record, passphrase)
+  if (rememberMs > 0) await createSession(getDb(), identity, rememberMs)
+  ready(identity)
+}
+
+/** Whether the stored key is encrypted at rest (so a session is meaningful). */
+export async function identityEncrypted(): Promise<boolean> {
+  const record = await getIdentityRecord(getDb()).catch(() => undefined)
+  return !!record && recordNeedsPassphrase(record)
+}
+
+/** Expiry epoch of the active "stay signed in" session, or null. */
+export function sessionExpiry(): Promise<number | null> {
+  return getSessionExpiry(getDb()).catch(() => null)
+}
+
+/** Drop the session and lock: reload so in-memory key and network are torn down. */
+export async function endSession(): Promise<void> {
+  await clearSession(getDb()).catch(() => {})
+  if (typeof location !== 'undefined') location.reload()
 }
 
 // ---- compose actions ----

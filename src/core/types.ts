@@ -126,6 +126,21 @@ export interface PendingRecord extends Envelope {
   receivedAt: number
 }
 
+/**
+ * A "stay signed in" session: the seed encrypted under a non-extractable
+ * WebCrypto key. The key's raw bytes are never exposed to JS, so this copy
+ * cannot be exfiltrated for offline use — see core/session.ts.
+ */
+export interface SessionRecord {
+  id: 'self'
+  pub: string
+  key: CryptoKey
+  iv: Uint8Array
+  box: Uint8Array
+  createdAt: number
+  expiresAt: number
+}
+
 export interface Identity {
   pub: string
   pubBytes: Uint8Array

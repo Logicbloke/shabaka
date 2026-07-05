@@ -51,7 +51,7 @@ export async function post(page: Page, text: string): Promise<void> {
 /** Read a value out of the app's IndexedDB from the page context. */
 export function headSeq(page: Page, author: string): Promise<number | null> {
   return page.evaluate(async (authorKey) => {
-    const req = indexedDB.open('shabaka', 1)
+    const req = indexedDB.open('shabaka')
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
       req.onsuccess = () => resolve(req.result)
       req.onerror = () => reject(req.error as Error)

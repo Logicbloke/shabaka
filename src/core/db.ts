@@ -5,6 +5,7 @@ import type {
   IdentityRecord,
   PendingRecord,
   ProfileRecord,
+  SessionRecord,
   StoredMessage,
 } from './types'
 
@@ -28,6 +29,7 @@ export interface ShabakaSchema extends DBSchema {
   }
   profiles: { key: string; value: ProfileRecord }
   identity: { key: string; value: IdentityRecord }
+  session: { key: string; value: SessionRecord }
   pending: {
     key: string
     value: PendingRecord
@@ -54,29 +56,34 @@ export function openShabakaDb(
   name = 'shabaka',
   onTerminated?: () => void,
 ): Promise<ShabakaDb> {
-  return openDB<ShabakaSchema>(name, 1, {
+  return openDB<ShabakaSchema>(name, 2, {
     terminated: onTerminated,
-    upgrade(db) {
-      const messages = db.createObjectStore('messages', { keyPath: 'id' })
-      messages.createIndex('by-author-seq', ['author', 'seq'], { unique: true })
-      messages.createIndex('by-display-ts', 'displayTs')
-      messages.createIndex('by-author-type', ['author', 'type'])
-      messages.createIndex('by-root', 'root')
-      messages.createIndex('by-target', 'target')
+    upgrade(db, oldVersion) {
+      if (oldVersion < 1) {
+        const messages = db.createObjectStore('messages', { keyPath: 'id' })
+        messages.createIndex('by-author-seq', ['author', 'seq'], { unique: true })
+        messages.createIndex('by-display-ts', 'displayTs')
+        messages.createIndex('by-author-type', ['author', 'type'])
+        messages.createIndex('by-root', 'root')
+        messages.createIndex('by-target', 'target')
 
-      db.createObjectStore('heads', { keyPath: 'author' })
+        db.createObjectStore('heads', { keyPath: 'author' })
 
-      const follows = db.createObjectStore('follows', {
-        keyPath: ['follower', 'target'],
-      })
-      follows.createIndex('by-follower', 'follower')
+        const follows = db.createObjectStore('follows', {
+          keyPath: ['follower', 'target'],
+        })
+        follows.createIndex('by-follower', 'follower')
 
-      db.createObjectStore('profiles', { keyPath: 'author' })
-      db.createObjectStore('identity', { keyPath: 'id' })
+        db.createObjectStore('profiles', { keyPath: 'author' })
+        db.createObjectStore('identity', { keyPath: 'id' })
 
-      const pending = db.createObjectStore('pending', { keyPath: 'id' })
-      pending.createIndex('by-author-seq', ['author', 'seq'])
-      pending.createIndex('by-received', 'receivedAt')
+        const pending = db.createObjectStore('pending', { keyPath: 'id' })
+        pending.createIndex('by-author-seq', ['author', 'seq'])
+        pending.createIndex('by-received', 'receivedAt')
+      }
+      if (oldVersion < 2) {
+        db.createObjectStore('session', { keyPath: 'id' })
+      }
     },
   })
 }
@@ -172,6 +179,18 @@ export function getIdentityRecord(db: ShabakaDb): Promise<IdentityRecord | undef
 
 export function putIdentityRecord(db: ShabakaDb, record: IdentityRecord): Promise<string> {
   return db.put('identity', record)
+}
+
+export function getSessionRecord(db: ShabakaDb): Promise<SessionRecord | undefined> {
+  return db.get('session', 'self')
+}
+
+export function putSessionRecord(db: ShabakaDb, record: SessionRecord): Promise<string> {
+  return db.put('session', record)
+}
+
+export function deleteSessionRecord(db: ShabakaDb): Promise<void> {
+  return db.delete('session', 'self')
 }
 
 export function getPendingByAuthorSeq(

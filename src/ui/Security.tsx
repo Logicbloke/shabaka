@@ -1,18 +1,40 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { exportIdentity } from '../core/identity'
-import { useApp } from '../state/store'
+import { endSession, identityEncrypted, sessionExpiry, useApp } from '../state/store'
 import { useT } from './i18n'
 import { QrCode } from './QrCode'
 
 export function Security() {
   const identity = useApp((s) => s.identity)!
+  const lang = useApp((s) => s.lang)
   const t = useT()
   const [showBackup, setShowBackup] = useState(false)
   const [showQr, setShowQr] = useState(false)
+  const [encrypted, setEncrypted] = useState(false)
+  const [expiry, setExpiry] = useState<number | null>(null)
+
+  useEffect(() => {
+    void identityEncrypted().then(setEncrypted)
+    void sessionExpiry().then(setExpiry)
+  }, [])
 
   return (
     <div className="security">
       <h2>{t('secTitle')}</h2>
+
+      {encrypted && (
+        <>
+          <h3>{t('secSessionTitle')}</h3>
+          {expiry ? (
+            <>
+              <p>{t('secSessionActive', { when: new Date(expiry).toLocaleString(lang) })}</p>
+              <button onClick={() => void endSession()}>{t('secSessionEnd')}</button>
+            </>
+          ) : (
+            <p>{t('secSessionInactive')}</p>
+          )}
+        </>
+      )}
 
       <h3>{t('secBackupTitle')}</h3>
       {showBackup ? (
