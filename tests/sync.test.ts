@@ -51,7 +51,7 @@ async function makeNode(follows: Identity[] = [], session?: string): Promise<Nod
   const ingested: StoredMessage[] = []
   const badPeers: string[] = []
   const sync = new SyncManager(
-    db,
+    () => db,
     identity.pub,
     { onIngested: (m) => ingested.push(...m), onBadPeer: (k) => badPeers.push(k) },
     session,
