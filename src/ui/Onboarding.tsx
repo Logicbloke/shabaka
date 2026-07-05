@@ -9,6 +9,7 @@ import {
 } from '../state/store'
 import { translateError, useT } from './i18n'
 import { LangToggle } from './App'
+import { QrScanner, qrScanSupported } from './QrScanner'
 import type { Identity } from '../core/types'
 
 type Step =
@@ -25,6 +26,7 @@ export function Onboarding({ phase }: { phase: Phase }) {
   const [backupInput, setBackupInput] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [scanning, setScanning] = useState(false)
 
   const fail = (err: Error) => setError(translateError(lang, err.message))
 
@@ -151,10 +153,24 @@ export function Onboarding({ phase }: { phase: Phase }) {
           {busy ? t('obImporting') : t('obImport')}
         </button>
       </form>
+      {qrScanSupported() && (
+        <button className="link" onClick={() => setScanning(true)}>
+          {t('qrScan')}
+        </button>
+      )}
       {error && <p className="error">{error}</p>}
       <button className="link" onClick={() => setStep({ name: 'choose' })}>
         {t('obBack')}
       </button>
+      {scanning && (
+        <QrScanner
+          onResult={(text) => {
+            setScanning(false)
+            setBackupInput(text)
+          }}
+          onClose={() => setScanning(false)}
+        />
+      )}
     </div>
   )
 }

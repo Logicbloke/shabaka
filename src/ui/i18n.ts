@@ -112,6 +112,18 @@ export const en = {
   secN5:
     'Your key lives in this browser. Malware or a malicious browser extension can steal it. A passphrase protects the key at rest, not while the app is open.',
 
+  qrShow: 'Show QR',
+  qrHide: 'Hide QR',
+  qrPubHint: 'Others can scan this to follow you.',
+  qrPrivReveal: 'Show private key as QR',
+  qrPrivWarn:
+    'Anyone who scans this becomes you. Only point your own device at it — never a shared or public screen.',
+  qrScan: 'Scan QR',
+  qrClose: 'Close',
+  qrScanHint: 'Point the camera at a QR code.',
+  qrScanError: 'Could not access the camera.',
+  qrScanNotPubKey: 'That QR is a private key, not a public key to follow.',
+
   errWrongPassphrase: 'Wrong passphrase.',
   errPassphraseRequired: 'A passphrase is required.',
   errNotBackup: 'That is not a Shabaka key backup.',
@@ -224,6 +236,18 @@ export const ar: Record<TKey, string> = {
     'البيانات الوصفية للرسائل الخاصة علنية: مع من تتراسل ومتى وكم تقريبًا. المحتوى وحده مشفّر. لا سرّية أمامية: من يحصل على مفتاحك يقرأ كل رسائلك السابقة.',
   secN5:
     'مفتاحك يعيش في هذا المتصفح. البرمجيات الخبيثة أو إضافات المتصفح الخبيثة يمكنها سرقته. عبارة المرور تحمي المفتاح المخزّن فقط، لا أثناء فتح التطبيق.',
+
+  qrShow: 'إظهار رمز QR',
+  qrHide: 'إخفاء رمز QR',
+  qrPubHint: 'يمكن للآخرين مسح هذا الرمز لمتابعتك.',
+  qrPrivReveal: 'إظهار المفتاح الخاص كرمز QR',
+  qrPrivWarn:
+    'من يمسح هذا الرمز يصبح أنت. وجّه إليه جهازك الخاص فقط — لا شاشة مشتركة أو عامة أبدًا.',
+  qrScan: 'مسح رمز QR',
+  qrClose: 'إغلاق',
+  qrScanHint: 'وجّه الكاميرا نحو رمز QR.',
+  qrScanError: 'تعذّر الوصول إلى الكاميرا.',
+  qrScanNotPubKey: 'رمز QR هذا مفتاح خاص، وليس مفتاحًا عامًا للمتابعة.',
 
   errWrongPassphrase: 'عبارة المرور خاطئة.',
   errPassphraseRequired: 'عبارة المرور مطلوبة.',

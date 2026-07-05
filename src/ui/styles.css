@@ -313,3 +313,51 @@ textarea {
 .security ul {
   line-height: 1.6;
 }
+
+.qr-block {
+  margin: 12px 0;
+}
+
+.qr {
+  display: block;
+  width: 208px;
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  /* White padding so the quiet zone stays light even against a dark panel. */
+  background: #ffffff;
+  padding: 8px;
+}
+
+/* Full-screen camera scanner. */
+.qr-scanner-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.85);
+}
+
+.qr-scanner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 360px;
+}
+
+.qr-scanner video {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 12px;
+  background: #000;
+}
+
+.qr-scanner .hint {
+  text-align: center;
+}
