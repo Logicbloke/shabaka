@@ -5,6 +5,13 @@ import { initApp, setOnReady } from './state/store'
 import { startNetwork } from './state/network'
 import './ui/styles.css'
 
+// Clickjacking guard: frame-ancestors cannot be delivered via <meta> CSP, so
+// on plain static hosting nothing stops a hostile page from framing the app
+// and overlaying its buttons. Refuse to run framed.
+if (window.self !== window.top) {
+  throw new Error('shabaka refuses to run inside a frame')
+}
+
 setOnReady(startNetwork)
 void initApp()
 

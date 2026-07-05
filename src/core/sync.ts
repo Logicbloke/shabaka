@@ -139,7 +139,7 @@ export class SyncManager {
     if (!isObj(p)) return
     const mine = await this.followedSet()
     const want: Record<string, { from: number; to: number }> = {}
-    for (const [author, seq] of Object.entries(p)) {
+    for (const [author, seq] of Object.entries(p).slice(0, MAX_INTEREST)) {
       if (typeof seq !== 'number' || !Number.isSafeInteger(seq) || seq < 1) continue
       if (!mine.has(author)) continue
       const head = await getHead(this.db, author)
@@ -152,7 +152,7 @@ export class SyncManager {
   private async handleWant(peer: PeerState, p: unknown): Promise<void> {
     if (!isObj(p)) return
     const offer = await this.followedSet()
-    for (const [author, range] of Object.entries(p)) {
+    for (const [author, range] of Object.entries(p).slice(0, MAX_INTEREST)) {
       if (!offer.has(author) || !isObj(range)) continue
       const { from, to } = range as { from: unknown; to: unknown }
       if (

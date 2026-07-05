@@ -3,6 +3,7 @@ import { getAuthorMessages, getFollows, getHead, getProfile } from '../core/db'
 import { followKey, saveProfile, unfollowKey, useApp } from '../state/store'
 import { shortKey, useQuery } from './hooks'
 import { useT } from './i18n'
+import { cleanText } from './text'
 import { PostCard } from './PostCard'
 
 function EditProfile({ name, bio }: { name: string; bio: string }) {
@@ -63,11 +64,11 @@ export function Profile({ author }: { author: string }) {
 
   return (
     <div className="profile">
-      <h2 dir="auto">{profile?.name || shortKey(author)}</h2>
+      <h2 dir="auto">{cleanText(profile?.name ?? '') || shortKey(author)}</h2>
       {head?.forked && <p className="error">{t('forkWarning')}</p>}
       {profile?.bio && (
         <p className="bio" dir="auto">
-          {profile.bio}
+          {cleanText(profile.bio)}
         </p>
       )}
       <div className="pubkey-row">

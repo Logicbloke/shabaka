@@ -51,6 +51,7 @@ export const en = {
   replyPlaceholder: 'Write a reply…',
   post: 'Post',
   reply: 'Reply',
+  msgRejected: 'Message could not be published — it is probably too long.',
 
   inThread: 'in thread',
   alreadyReacted: 'already reacted',
@@ -165,6 +166,7 @@ export const ar: Record<TKey, string> = {
   replyPlaceholder: 'اكتب ردًا…',
   post: 'نشر',
   reply: 'رد',
+  msgRejected: 'تعذّر نشر الرسالة — على الأرجح لأنها طويلة جدًا.',
 
   inThread: 'ضمن نقاش',
   alreadyReacted: 'تفاعلت بالفعل',

@@ -2,7 +2,21 @@ import { describe, expect, it } from 'vitest'
 import { generateIdentity, makeChain, makePosts, testDb } from './helpers'
 import { receiveEnvelope, schemaError } from '../src/core/validate'
 import { createEnvelope, msgId } from '../src/core/envelope'
+import { fromB64url } from '../src/core/b64'
 import { getHead } from '../src/core/db'
+
+/** Rewrite the last char of a b64url string so it decodes to the same bytes. */
+function malleateB64(s: string): string {
+  const orig = fromB64url(s)
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'
+  for (const c of alphabet) {
+    const alt = s.slice(0, -1) + c
+    if (alt === s) continue
+    const decoded = fromB64url(alt)
+    if (decoded.every((b, i) => b === orig[i])) return alt
+  }
+  throw new Error('value has no slack bits to malleate')
+}
 
 describe('schemaError', () => {
   const alice = generateIdentity()
@@ -29,6 +43,11 @@ describe('schemaError', () => {
     expect(schemaError({ ...valid, seq: 2 })).toBe('bad prev') // seq 2 requires prev
     expect(schemaError({ ...valid, ts: -1 })).toBe('bad ts')
     expect(schemaError({ ...valid, type: 'exotic' })).toBe('unknown type')
+  })
+
+  it('rejects non-canonical b64url encodings', () => {
+    // same signature bytes under a different string — must not pass schema
+    expect(schemaError({ ...valid, sig: malleateB64(valid.sig) })).toBe('bad sig encoding')
   })
 
   it('rejects bad content per type', () => {
@@ -132,6 +151,22 @@ describe('receiveEnvelope', () => {
     expect(head?.seq).toBe(2) // keep-first
     expect(head?.id).toBe(msgId(e2!))
     expect(head?.forked).toBe(true)
+  })
+
+  it('cannot be tricked into flagging an author via sig-encoding malleation', async () => {
+    const db = await testDb()
+    const alice = generateIdentity()
+    const [e1, e2] = makePosts(alice, ['one', 'two'])
+    await receiveEnvelope(db, e1!)
+    await receiveEnvelope(db, e2!)
+
+    // a hostile relay re-injects e2 with the sig's slack bits flipped: the
+    // signature bytes are identical (it would still verify) but the msgId is
+    // new, so seq 2 looks doubly-signed — it must die at schema, not fork
+    const replay = { ...e2!, sig: malleateB64(e2!.sig) }
+    const r = await receiveEnvelope(db, replay)
+    expect(r.status).toBe('invalid')
+    expect((await getHead(db, alice.pub))?.forked).toBe(false)
   })
 
   it('detects a next-seq message built on the wrong history', async () => {

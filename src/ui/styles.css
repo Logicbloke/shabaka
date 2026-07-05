@@ -78,6 +78,16 @@ button.link.author {
   font-weight: 600;
 }
 
+/* key prefix shown beside self-chosen display names — names are not unique */
+.key-suffix {
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 0.75rem;
+  margin-inline-start: 4px;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
 input,
 textarea {
   width: 100%;

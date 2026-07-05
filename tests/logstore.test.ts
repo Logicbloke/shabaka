@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { generateIdentity, testDb } from './helpers'
 import { appendLocal, rebuildDerived } from '../src/core/logstore'
+import { sealDm } from '../src/core/dm'
 import {
   getFollows,
   getHead,
@@ -21,6 +22,26 @@ describe('logstore', () => {
     expect(m2.seq).toBe(2)
     expect(m2.prev).toBe(m1.id)
     expect((await getHead(db, alice.pub))?.id).toBe(m2.id)
+  })
+
+  it('refuses to append a message peers would reject', async () => {
+    const db = await testDb()
+    const alice = generateIdentity()
+    const bob = generateIdentity()
+
+    await expect(
+      appendLocal(db, alice, 'post', { text: 'x'.repeat(9000) }, 1),
+    ).rejects.toThrow('invalid message')
+
+    // realistic path: multi-byte text within the UI cap still overflows the
+    // dm box limit once encrypted and b64-encoded
+    await expect(
+      appendLocal(db, alice, 'dm', sealDm(alice, bob.pub, 'م'.repeat(8000)), 2),
+    ).rejects.toThrow('invalid message')
+
+    // the chain is untouched — the next valid message still takes seq 1
+    const m = await appendLocal(db, alice, 'post', { text: 'ok' }, 3)
+    expect(m.seq).toBe(1)
   })
 
   it('derives follow state, latest message wins', async () => {

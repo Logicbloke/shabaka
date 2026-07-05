@@ -4,6 +4,7 @@ import { openDm } from '../core/dm'
 import { sendDm, useApp } from '../state/store'
 import { formatTime, useQuery } from './hooks'
 import { useT } from './i18n'
+import { cleanText } from './text'
 import { AuthorLink } from './PostCard'
 import type { DmContent } from '../core/types'
 
@@ -13,6 +14,7 @@ export function DmConversation({ other }: { other: string }) {
   const dms = useQuery((db) => getDmMessages(db, me.pub), [me.pub])
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const thread = (dms ?? [])
     .filter((m) => {
@@ -32,7 +34,7 @@ export function DmConversation({ other }: { other: string }) {
           const opened = openDm(me, m)
           return (
             <div key={m.id} className={m.author === me.pub ? 'dm mine' : 'dm theirs'}>
-              <p dir="auto">{opened ? opened.text : t('cantDecrypt')}</p>
+              <p dir="auto">{opened ? cleanText(opened.text) : t('cantDecrypt')}</p>
               <time>{formatTime(m.displayTs)}</time>
             </div>
           )
@@ -41,13 +43,14 @@ export function DmConversation({ other }: { other: string }) {
       <form
         onSubmit={(e) => {
           e.preventDefault()
-          const t = text.trim()
-          if (!t) return
+          const trimmed = text.trim()
+          if (!trimmed) return
           setBusy(true)
-          void sendDm(other, t).then(() => {
-            setText('')
-            setBusy(false)
-          })
+          setError(null)
+          sendDm(other, trimmed)
+            .then(() => setText(''))
+            .catch(() => setError(t('msgRejected')))
+            .finally(() => setBusy(false))
         }}
       >
         <textarea
@@ -59,6 +62,7 @@ export function DmConversation({ other }: { other: string }) {
         />
         <button disabled={busy || !text.trim()}>{t('send')}</button>
       </form>
+      {error && <p className="error">{error}</p>}
     </div>
   )
 }

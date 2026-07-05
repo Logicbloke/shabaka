@@ -1,4 +1,4 @@
-import { B64_32, B64_64, B64URL_RE } from './b64'
+import { B64_32, B64_64, B64URL_RE, isCanonicalB64url } from './b64'
 import { canonicalize } from './canonical'
 import { msgId, verifyEnvelope } from './envelope'
 import {
@@ -23,7 +23,7 @@ const ENVELOPE_KEYS = ['v', 'author', 'seq', 'prev', 'ts', 'type', 'content', 's
 const TYPES = new Set(['post', 'reply', 'reaction', 'profile', 'follow', 'unfollow', 'dm'])
 
 function isB64(s: unknown, len: number): s is string {
-  return typeof s === 'string' && s.length === len && B64URL_RE.test(s)
+  return typeof s === 'string' && s.length === len && isCanonicalB64url(s)
 }
 
 function isStr(s: unknown, max: number): s is string {

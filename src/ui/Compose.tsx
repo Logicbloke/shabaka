@@ -7,6 +7,7 @@ export function Compose({ root, parent }: { root?: string; parent?: string }) {
   const t = useT()
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const isReply = root !== undefined && parent !== undefined
 
   return (
@@ -17,11 +18,12 @@ export function Compose({ root, parent }: { root?: string; parent?: string }) {
         const trimmed = text.trim()
         if (!trimmed) return
         setBusy(true)
+        setError(null)
         const action = isReply ? composeReply(root, parent, trimmed) : composePost(trimmed)
-        void action.then(() => {
-          setText('')
-          setBusy(false)
-        })
+        action
+          .then(() => setText(''))
+          .catch(() => setError(t('msgRejected')))
+          .finally(() => setBusy(false))
       }}
     >
       <textarea
@@ -33,6 +35,7 @@ export function Compose({ root, parent }: { root?: string; parent?: string }) {
         dir="auto"
       />
       <button disabled={busy || !text.trim()}>{isReply ? t('reply') : t('post')}</button>
+      {error && <p className="error">{error}</p>}
     </form>
   )
 }

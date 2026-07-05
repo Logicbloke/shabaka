@@ -2,13 +2,22 @@ import { getProfile, getReactions, getThread } from '../core/db'
 import { navigate, reactTo, useApp } from '../state/store'
 import { formatTime, shortKey, useQuery } from './hooks'
 import { useT } from './i18n'
+import { cleanText } from './text'
 import type { ReplyContent, StoredMessage } from '../core/types'
 
 export function AuthorLink({ author }: { author: string }) {
   const profile = useQuery((db) => getProfile(db, author), [author])
+  const name = cleanText(profile?.name ?? '')
   return (
-    <button className="link author" onClick={() => navigate({ name: 'profile', author })}>
-      {profile?.name || shortKey(author)}
+    <button
+      className="link author"
+      dir="auto"
+      title={author}
+      onClick={() => navigate({ name: 'profile', author })}
+    >
+      {name || shortKey(author)}
+      {/* names are self-chosen and not unique — the key prefix is the identity */}
+      {name && <span className="key-suffix">{shortKey(author)}</span>}
     </button>
   )
 }
@@ -22,12 +31,13 @@ export function PostCard({ msg, inThread }: { msg: StoredMessage; inThread?: boo
     [msg.id, msg.type],
   )
 
-  const text = (msg.content as { text?: string }).text ?? ''
+  const text = cleanText((msg.content as { text?: string }).text ?? '')
   const rootId = msg.type === 'reply' ? (msg.content as ReplyContent).root : msg.id
 
   const counts = new Map<string, number>()
   for (const r of reactions ?? []) {
-    const emoji = (r.content as { emoji: string }).emoji
+    const emoji = cleanText((r.content as { emoji: string }).emoji)
+    if (!emoji) continue
     counts.set(emoji, (counts.get(emoji) ?? 0) + 1)
   }
   const iReacted = (reactions ?? []).some((r) => r.author === me.pub)
