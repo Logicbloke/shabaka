@@ -31,7 +31,7 @@ test('DMs decrypt for the recipient; a relaying peer cannot read them', async ({
   // Carol replicated Alice's log (the ciphertext envelope) but sees no
   // conversation and cannot decrypt anything
   const carolHasDmEnvelope = await carol.page.evaluate(async () => {
-    const req = indexedDB.open('shabaka', 1)
+    const req = indexedDB.open('shabaka')
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
       req.onsuccess = () => resolve(req.result)
       req.onerror = () => reject(req.error as Error)

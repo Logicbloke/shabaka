@@ -131,6 +131,24 @@ export const en = {
   qrScanError: 'Could not access the camera.',
   qrScanNotPubKey: 'That QR is a private key, not a public key to follow.',
 
+  sessionStayLabel: 'Stay signed in on this device',
+  sessionOff: "Don't stay signed in",
+  session5m: '5 minutes',
+  session60m: '60 minutes',
+  session90m: '90 minutes',
+  session1d: '1 day',
+  session3d: '3 days',
+  session1w: '1 week',
+  session1mo: '1 month',
+  session3mo: '3 months',
+  sessionWarn:
+    'For that long, your key can be unlocked on this device without the passphrase. Only use this on a device only you can access.',
+  secSessionTitle: 'Staying signed in',
+  secSessionActive: 'This device stays unlocked without the passphrase until {when}.',
+  secSessionInactive:
+    'Your passphrase is required each time you open Shabaka on this device.',
+  secSessionEnd: 'Sign out of this device now',
+
   errWrongPassphrase: 'Wrong passphrase.',
   errPassphraseRequired: 'A passphrase is required.',
   errNotBackup: 'That is not a Shabaka key backup.',
@@ -262,6 +280,23 @@ export const ar: Record<TKey, string> = {
   qrScanHint: 'وجّه الكاميرا نحو رمز QR.',
   qrScanError: 'تعذّر الوصول إلى الكاميرا.',
   qrScanNotPubKey: 'رمز QR هذا مفتاح خاص، وليس مفتاحًا عامًا للمتابعة.',
+
+  sessionStayLabel: 'البقاء مسجّلاً على هذا الجهاز',
+  sessionOff: 'عدم البقاء مسجّلاً',
+  session5m: '5 دقائق',
+  session60m: '60 دقيقة',
+  session90m: '90 دقيقة',
+  session1d: 'يوم واحد',
+  session3d: '3 أيام',
+  session1w: 'أسبوع واحد',
+  session1mo: 'شهر واحد',
+  session3mo: '3 أشهر',
+  sessionWarn:
+    'طوال هذه المدة يمكن فتح مفتاحك على هذا الجهاز دون عبارة المرور. استخدم هذا فقط على جهاز لا يصل إليه سواك.',
+  secSessionTitle: 'البقاء مسجّلاً',
+  secSessionActive: 'يبقى هذا الجهاز مفتوحًا دون عبارة المرور حتى {when}.',
+  secSessionInactive: 'عبارة المرور مطلوبة في كل مرة تفتح فيها «شبكة» على هذا الجهاز.',
+  secSessionEnd: 'تسجيل الخروج من هذا الجهاز الآن',
 
   errWrongPassphrase: 'عبارة المرور خاطئة.',
   errPassphraseRequired: 'عبارة المرور مطلوبة.',

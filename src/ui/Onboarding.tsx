@@ -7,10 +7,33 @@ import {
   useApp,
   type Phase,
 } from '../state/store'
-import { translateError, useT } from './i18n'
+import { translateError, useT, type TKey } from './i18n'
 import { LangToggle } from './App'
 import { QrScanner, qrScanSupported } from './QrScanner'
+import { SESSION_DURATIONS, sessionsSupported } from '../core/session'
 import type { Identity } from '../core/types'
+
+/** "Stay signed in for …" picker; value is a duration in ms, 0 = off. */
+function RememberSelect({ value, onChange }: { value: number; onChange: (ms: number) => void }) {
+  const t = useT()
+  if (!sessionsSupported()) return null
+  return (
+    <>
+      <label className="remember">
+        {t('sessionStayLabel')}
+        <select value={value} onChange={(e) => onChange(Number(e.target.value))}>
+          <option value={0}>{t('sessionOff')}</option>
+          {SESSION_DURATIONS.map((d) => (
+            <option key={d.id} value={d.ms}>
+              {t(`session${d.id}` as TKey)}
+            </option>
+          ))}
+        </select>
+      </label>
+      {value > 0 && <p className="hint">{t('sessionWarn')}</p>}
+    </>
+  )
+}
 
 type Step =
   | { name: 'choose' }
@@ -24,6 +47,7 @@ export function Onboarding({ phase }: { phase: Phase }) {
   const [step, setStep] = useState<Step>({ name: 'choose' })
   const [passphrase, setPassphrase] = useState('')
   const [backupInput, setBackupInput] = useState('')
+  const [remember, setRemember] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [scanning, setScanning] = useState(false)
@@ -43,7 +67,7 @@ export function Onboarding({ phase }: { phase: Phase }) {
             e.preventDefault()
             setBusy(true)
             setError(null)
-            unlock(passphrase)
+            unlock(passphrase, remember)
               .catch(fail)
               .finally(() => setBusy(false))
           }}
@@ -55,6 +79,7 @@ export function Onboarding({ phase }: { phase: Phase }) {
             placeholder={t('obPassphrase')}
             autoFocus
           />
+          <RememberSelect value={remember} onChange={setRemember} />
           <button disabled={busy || !passphrase}>{busy ? t('obUnlocking') : t('obUnlock')}</button>
         </form>
         {error && <p className="error">{error}</p>}
@@ -101,7 +126,7 @@ export function Onboarding({ phase }: { phase: Phase }) {
           onSubmit={(e) => {
             e.preventDefault()
             setBusy(true)
-            commitIdentity(step.identity, passphrase || undefined)
+            commitIdentity(step.identity, passphrase || undefined, remember)
               .catch(fail)
               .finally(() => setBusy(false))
           }}
@@ -113,6 +138,7 @@ export function Onboarding({ phase }: { phase: Phase }) {
             placeholder={t('obPassOptionalPlaceholder')}
             autoFocus
           />
+          {passphrase && <RememberSelect value={remember} onChange={setRemember} />}
           <button disabled={busy}>
             {busy ? t('obSettingUp') : passphrase ? t('obEncryptStart') : t('obSkipStart')}
           </button>
@@ -131,7 +157,7 @@ export function Onboarding({ phase }: { phase: Phase }) {
           e.preventDefault()
           setBusy(true)
           setError(null)
-          importAndCommit(backupInput, passphrase || undefined)
+          importAndCommit(backupInput, passphrase || undefined, remember)
             .catch(fail)
             .finally(() => setBusy(false))
         }}
@@ -149,6 +175,7 @@ export function Onboarding({ phase }: { phase: Phase }) {
           onChange={(e) => setPassphrase(e.target.value)}
           placeholder={t('obImportPassPlaceholder')}
         />
+        {passphrase && <RememberSelect value={remember} onChange={setRemember} />}
         <button disabled={busy || !backupInput.trim()}>
           {busy ? t('obImporting') : t('obImport')}
         </button>

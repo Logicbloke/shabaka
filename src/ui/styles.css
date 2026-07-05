@@ -199,6 +199,19 @@ textarea {
   color: var(--muted);
 }
 
+.remember {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.remember select {
+  flex: 0 0 auto;
+}
+
 .error {
   color: var(--danger);
 }
