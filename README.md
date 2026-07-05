@@ -12,6 +12,7 @@
 
 1. **من الرابط مباشرة (الأسهل):**
 افتح <https://logicbloke.github.io/shabaka/>
+ويمكنك تثبيته على هاتفك كتطبيق: اختر «إضافة إلى الشاشة الرئيسية» أو «تثبيت» من قائمة المتصفح، وسيفتح بعدها حتى دون اتصال بالإنترنت.
 
 2. **ملف واحد تفتحه بنقرة مزدوجة:**
 حمّل [`shabaka.html`](https://github.com/Logicbloke/shabaka/releases/latest/download/shabaka.html) من صفحة الإصدارات، ثم افتحه في متصفحك بنقرة مزدوجة. التطبيق كامل داخل ملف واحد، ويمكن نقله على وصلة USB ومشاركته دون إنترنت.
@@ -54,7 +55,9 @@ and host anywhere.
 End users need **no git, no Node, no tooling** — just a modern browser
 (Chrome or Firefox):
 
-1. **Hosted (easiest):** open <https://logicbloke.github.io/shabaka/>
+1. **Hosted (easiest):** open <https://logicbloke.github.io/shabaka/>.
+   It is a PWA — on a phone, pick "Add to Home Screen" / "Install" from the
+   browser menu to use it as an app; once installed it opens offline too.
 
 2. **Single file, double-click:** download
    [`shabaka.html`](https://github.com/Logicbloke/shabaka/releases/latest/download/shabaka.html)

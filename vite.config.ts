@@ -36,15 +36,92 @@ function injectCsp(): Plugin {
   }
 }
 
+// Files that live in public/ and must also work offline once installed.
+// Kept in sync by hand — the bundle hook below only sees Rollup-emitted files.
+const PUBLIC_PRECACHE = [
+  'manifest.webmanifest',
+  'icons/icon-192.png',
+  'icons/icon-512.png',
+  'icons/maskable-512.png',
+  'icons/apple-touch-icon.png',
+]
+
+/**
+ * Emits sw.js for the hosted build so the app is installable as a PWA and
+ * works offline. Hashed assets are cache-first; navigations are
+ * network-first (a deploy is picked up on the next online load) falling back
+ * to the cached shell. The cache name is derived from the asset file names,
+ * which contain content hashes — any changed bundle produces a new cache and
+ * evicts the old one on activate.
+ */
+function serviceWorker(): Plugin {
+  return {
+    name: 'service-worker',
+    apply: 'build',
+    generateBundle(_options, bundle) {
+      const assets = Object.keys(bundle).filter((f) => f !== 'index.html')
+      let h = 5381
+      for (const c of assets.join('|')) h = ((h * 33) ^ c.charCodeAt(0)) >>> 0
+      const precache = ['./', './index.html', ...[...PUBLIC_PRECACHE, ...assets].map((f) => `./${f}`)]
+      this.emitFile({
+        type: 'asset',
+        fileName: 'sw.js',
+        source: `const CACHE = 'shabaka-${h.toString(36)}'
+const ASSETS = ${JSON.stringify(precache)}
+
+self.addEventListener('install', (e) => {
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()))
+})
+
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
+    caches
+      .keys()
+      .then((keys) => Promise.all(keys.map((k) => k === CACHE || caches.delete(k))))
+      .then(() => self.clients.claim()),
+  )
+})
+
+self.addEventListener('fetch', (e) => {
+  const req = e.request
+  if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return
+  if (req.mode === 'navigate') {
+    e.respondWith(
+      fetch(req)
+        .then((res) => {
+          const copy = res.clone()
+          caches.open(CACHE).then((c) => c.put('./', copy))
+          return res
+        })
+        .catch(() => caches.match('./', { ignoreVary: true })),
+    )
+    return
+  }
+  // ignoreVary: precached responses may carry Vary headers that would
+  // otherwise fail to match the page's crossorigin asset requests; every
+  // cached URL here is same-origin and content-hashed, so URL match is safe
+  e.respondWith(caches.match(req, { ignoreVary: true }).then((hit) => hit ?? fetch(req)))
+})
+`,
+      })
+    },
+  }
+}
+
 /**
  * Inline the bundle and stylesheet into one self-contained shabaka.html that
  * runs from a double-click (file://) — a distribution channel that needs no
  * git, no server, and no install, and can be passed around on a USB stick.
+ * PWA tags are stripped: service workers and manifests do not work (and just
+ * produce console errors) on file://.
  */
 function singleFile(): Plugin {
   return {
     name: 'single-file',
     apply: 'build',
+    transformIndexHtml(html) {
+      return html.replace(/\s*<!-- pwa:start -->[\s\S]*?<!-- pwa:end -->/, '')
+    },
     closeBundle() {
       const dir = 'dist-single'
       let html = readFileSync(join(dir, 'index.html'), 'utf8')
@@ -66,13 +143,15 @@ function singleFile(): Plugin {
 
 export default defineConfig({
   base: SINGLE_FILE ? './' : (env?.BASE_PATH ?? '/'),
-  plugins: [react(), injectCsp(), ...(SINGLE_FILE ? [singleFile()] : [])],
+  plugins: [react(), injectCsp(), ...(SINGLE_FILE ? [singleFile()] : [serviceWorker()])],
   build: SINGLE_FILE
     ? {
         outDir: 'dist-single',
         cssCodeSplit: false,
         assetsInlineLimit: 1024 * 1024 * 100,
         modulePreload: false,
+        // shabaka.html is the only artifact — manifest/icons/sw are hosted-only
+        copyPublicDir: false,
       }
     : undefined,
   test: {
