@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getDb, useApp } from '../state/store'
+import { useApp, withDb } from '../state/store'
 import type { ShabakaDb } from '../core/db'
 
 /**
@@ -14,7 +14,7 @@ export function useQuery<T>(
   const [value, setValue] = useState<T>()
   useEffect(() => {
     let live = true
-    void fn(getDb()).then((v) => {
+    void withDb(fn).then((v) => {
       if (live) setValue(v)
     })
     return () => {

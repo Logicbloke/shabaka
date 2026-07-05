@@ -44,8 +44,18 @@ export type IngestTx = IDBPTransaction<
 
 export const PENDING_CAP = 500
 
-export function openShabakaDb(name = 'shabaka'): Promise<ShabakaDb> {
+/**
+ * `onTerminated` fires when the browser closes the connection out from under
+ * us — WebKit (i.e. every browser on iOS) does this when the tab is
+ * backgrounded or under memory pressure. The handle is dead afterwards, so the
+ * caller must drop it and reopen. See `openDb`/`withDb` in state/store.ts.
+ */
+export function openShabakaDb(
+  name = 'shabaka',
+  onTerminated?: () => void,
+): Promise<ShabakaDb> {
   return openDB<ShabakaSchema>(name, 1, {
+    terminated: onTerminated,
     upgrade(db) {
       const messages = db.createObjectStore('messages', { keyPath: 'id' })
       messages.createIndex('by-author-seq', ['author', 'seq'], { unique: true })

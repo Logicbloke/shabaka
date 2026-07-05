@@ -77,10 +77,53 @@ export function setLang(lang: Lang): void {
 }
 
 let db: ShabakaDb | null = null
+let opening: Promise<ShabakaDb> | null = null
+
+/** Open (or reopen) the connection, coalescing concurrent callers. */
+function openDb(): Promise<ShabakaDb> {
+  if (db) return Promise.resolve(db)
+  if (opening) return opening
+  opening = openShabakaDb('shabaka', () => {
+    // WebKit (every iOS browser) drops the connection when the tab is
+    // backgrounded or under memory pressure. Discard the dead handle and
+    // reconnect so the next operation gets a live one.
+    db = null
+    opening = null
+    void openDb()
+  }).then((opened) => {
+    db = opened
+    opening = null
+    return opened
+  })
+  return opening
+}
 
 export function getDb(): ShabakaDb {
   if (!db) throw new Error('db not ready')
   return db
+}
+
+function isConnectionClosing(e: unknown): boolean {
+  return (
+    e instanceof DOMException &&
+    (e.name === 'InvalidStateError' || /connection is closing/i.test(e.message))
+  )
+}
+
+/**
+ * Run a DB operation, transparently reconnecting and retrying once if the
+ * connection was closing (the iOS/WebKit failure mode). Use this for any DB
+ * access that must survive the tab being backgrounded.
+ */
+export async function withDb<T>(fn: (db: ShabakaDb) => Promise<T>): Promise<T> {
+  const conn = await openDb()
+  try {
+    return await fn(conn)
+  } catch (e) {
+    if (!isConnectionClosing(e)) throw e
+    db = null
+    return fn(await openDb())
+  }
 }
 
 function me(): Identity {
@@ -95,7 +138,7 @@ export function navigate(view: View): void {
 
 export async function initApp(): Promise<void> {
   applyDir(useApp.getState().lang)
-  db = await openShabakaDb()
+  const conn = await openDb()
 
   coreEvents.on('message-ingested', () => {
     useApp.setState((s) => ({ dataVersion: s.dataVersion + 1 }))
@@ -106,7 +149,7 @@ export async function initApp(): Promise<void> {
     }))
   })
 
-  const record = await getIdentityRecord(db)
+  const record = await getIdentityRecord(conn)
   if (!record) {
     useApp.setState({ phase: 'fresh' })
   } else if (recordNeedsPassphrase(record)) {
@@ -153,7 +196,7 @@ export async function unlock(passphrase: string): Promise<void> {
 // ---- compose actions ----
 
 async function append(type: MessageType, content: Content): Promise<StoredMessage> {
-  const msg = await appendLocal(getDb(), me(), type, content)
+  const msg = await withDb((conn) => appendLocal(conn, me(), type, content))
   coreEvents.emit('message-ingested', msg)
   coreEvents.emit('local-append', msg)
   return msg

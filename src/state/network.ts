@@ -15,9 +15,8 @@ let started = false
 export async function startNetwork(identity: Identity): Promise<void> {
   if (started) return
   started = true
-  const db = getDb()
 
-  const sync = new SyncManager(db, identity.pub, {
+  const sync = new SyncManager(getDb, identity.pub, {
     onIngested: (msgs) => {
       for (const m of msgs) coreEvents.emit('message-ingested', m)
     },

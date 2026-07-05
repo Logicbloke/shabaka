@@ -56,12 +56,21 @@ export class SyncManager {
   private peers = new Map<string, PeerState>()
 
   constructor(
-    private db: ShabakaDb,
+    private getDb: () => ShabakaDb,
     private selfPub: string,
     private cb: SyncCallbacks,
     session?: string,
   ) {
     this.session = session ?? toB64url(randomBytes(16))
+  }
+
+  /**
+   * Always resolve the current live connection rather than caching one — on
+   * iOS/WebKit the connection can be closed and reopened underneath us while
+   * this long-lived manager stays alive.
+   */
+  private get db(): ShabakaDb {
+    return this.getDb()
   }
 
   /** v1: interest and offer are the same set — self + everyone followed. */
