@@ -43,11 +43,12 @@ export function PostCard({ msg, inThread }: { msg: StoredMessage; inThread?: boo
     counts.set(emoji, (counts.get(emoji) ?? 0) + 1)
   }
   const iReacted = (reactions ?? []).some((r) => r.author === me.pub)
+  const likes = counts.get('👍') ?? 0
 
   return (
     <article className="post">
       <div className="post-head">
-        <AuthorLink author={msg.author} />
+        <AuthorLink author={msg.author} hideKey />
         <TimeStamp ts={msg.displayTs} />
         {msg.type === 'reply' && !inThread && (
           <button className="link" onClick={() => navigate({ name: 'thread', root: rootId })}>
@@ -59,18 +60,20 @@ export function PostCard({ msg, inThread }: { msg: StoredMessage; inThread?: boo
         {text}
       </p>
       <div className="post-actions">
-        {[...counts.entries()].map(([emoji, n]) => (
-          <span key={emoji} className="reaction">
-            {emoji} {n}
-          </span>
-        ))}
+        {[...counts.entries()]
+          .filter(([emoji]) => emoji !== '👍')
+          .map(([emoji, n]) => (
+            <span key={emoji} className="reaction">
+              {emoji} {n}
+            </span>
+          ))}
         <button
           className="link"
           disabled={iReacted}
           onClick={() => void reactTo(msg.id, '👍')}
           title={iReacted ? t('alreadyReacted') : t('react')}
         >
-          👍
+          👍 {likes || ''}
         </button>
         {!inThread && (
           <button className="link" onClick={() => navigate({ name: 'thread', root: rootId })}>
