@@ -8,7 +8,16 @@ export function Compose({ root, parent }: { root?: string; parent?: string }) {
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [open, setOpen] = useState(false)
   const isReply = root !== undefined && parent !== undefined
+
+  if (isReply && !open) {
+    return (
+      <button className="link reply-toggle" onClick={() => setOpen(true)}>
+        {t('reply')}
+      </button>
+    )
+  }
 
   return (
     <form
@@ -21,7 +30,10 @@ export function Compose({ root, parent }: { root?: string; parent?: string }) {
         setError(null)
         const action = isReply ? composeReply(root, parent, trimmed) : composePost(trimmed)
         action
-          .then(() => setText(''))
+          .then(() => {
+            setText('')
+            setOpen(false)
+          })
           .catch(() => setError(t('msgRejected')))
           .finally(() => setBusy(false))
       }}
@@ -33,6 +45,7 @@ export function Compose({ root, parent }: { root?: string; parent?: string }) {
         maxLength={MAX_TEXT}
         rows={isReply ? 2 : 3}
         dir="auto"
+        autoFocus={isReply}
       />
       <button disabled={busy || !text.trim()}>{isReply ? t('reply') : t('post')}</button>
       {error && <p className="error">{error}</p>}

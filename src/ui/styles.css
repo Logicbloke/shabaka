@@ -144,6 +144,11 @@ textarea {
   margin: 16px 0;
 }
 
+/* collapsed reply compose — just the toggle button */
+.reply-toggle {
+  margin: 4px 0 12px;
+}
+
 .post {
   border: 1px solid var(--border);
   background: var(--panel);
