@@ -12,9 +12,11 @@ export interface ReadCursors {
   replies: number
   /** DMs addressed to me */
   dms: number
+  /** reactions to my own posts/replies */
+  likes: number
 }
 
-export const ZERO_CURSORS: ReadCursors = { feed: 0, replies: 0, dms: 0 }
+export const ZERO_CURSORS: ReadCursors = { feed: 0, replies: 0, dms: 0, likes: 0 }
 
 export interface UnreadCounts extends ReadCursors {
   total: number
@@ -26,6 +28,7 @@ export interface UnreadCounts extends ReadCursors {
  *
  *  - dms:     DMs addressed to me by someone else
  *  - replies: replies to one of my own messages (from anyone but me)
+ *  - likes:   reactions to one of my own messages (from anyone but me)
  *  - feed:    posts/replies from followed authors that aren't replies to me
  *
  * A single reverse scan over the by-display-ts index bounded below by the
@@ -43,10 +46,11 @@ export async function countUnread(
   const follows = new Set(followRecords.filter((f) => f.following).map((f) => f.target))
   const mineIds = new Set(mine.map((m) => m.id))
 
-  const floor = Math.min(cursors.feed, cursors.replies, cursors.dms)
+  const floor = Math.min(cursors.feed, cursors.replies, cursors.dms, cursors.likes)
   let feed = 0
   let replies = 0
   let dms = 0
+  let likes = 0
 
   let cursor = await db
     .transaction('messages')
@@ -59,6 +63,8 @@ export async function countUnread(
         if (m.target === selfPub && m.displayTs > cursors.dms) dms++
       } else if (m.type === 'reply' && mineIds.has((m.content as ReplyContent).parent)) {
         if (m.displayTs > cursors.replies) replies++
+      } else if (m.type === 'reaction' && mineIds.has(m.target ?? '')) {
+        if (m.displayTs > cursors.likes) likes++
       } else if ((m.type === 'post' || m.type === 'reply') && follows.has(m.author)) {
         if (m.displayTs > cursors.feed) feed++
       }
@@ -66,5 +72,5 @@ export async function countUnread(
     cursor = await cursor.continue()
   }
 
-  return { feed, replies, dms, total: feed + replies + dms }
+  return { feed, replies, dms, likes, total: feed + replies + dms + likes }
 }

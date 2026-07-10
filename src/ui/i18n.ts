@@ -10,6 +10,7 @@ export const en = {
 
   navFeed: 'Feed',
   navFollows: 'Follows',
+  navNotifications: 'Notifications',
   navDms: 'DMs',
   navMe: 'Me',
   navSecurity: 'Security',
@@ -60,6 +61,15 @@ export const en = {
   inThread: 'in thread',
   alreadyReacted: 'already reacted',
   react: 'react',
+
+  notifTitle: 'Notifications',
+  notifEmpty:
+    "No notifications yet. When someone likes or replies to your posts, you'll see it here.",
+  notifLikedPost: 'liked your post',
+  notifReactedPost: 'reacted {emoji} to your post',
+  notifRepliedPost: 'replied to your post',
+  notifOnPost: 'on:',
+  notifClose: 'Close',
 
   loading: 'Loading…',
   threadNotSynced: 'Post not yet synced to this device.',
@@ -162,6 +172,7 @@ export const ar: Record<TKey, string> = {
 
   navFeed: 'الخط الزمني',
   navFollows: 'المتابَعون',
+  navNotifications: 'الإشعارات',
   navDms: 'الرسائل',
   navMe: 'أنا',
   navSecurity: 'الأمان',
@@ -212,6 +223,14 @@ export const ar: Record<TKey, string> = {
   inThread: 'ضمن نقاش',
   alreadyReacted: 'تفاعلت بالفعل',
   react: 'تفاعل',
+
+  notifTitle: 'الإشعارات',
+  notifEmpty: 'لا إشعارات بعد. عندما يعجب أحدهم بمنشوراتك أو يرد عليها، ستظهر هنا.',
+  notifLikedPost: 'أعجب بمنشورك',
+  notifReactedPost: 'تفاعل {emoji} مع منشورك',
+  notifRepliedPost: 'ردّ على منشورك',
+  notifOnPost: 'على:',
+  notifClose: 'إغلاق',
 
   loading: 'جارٍ التحميل…',
   threadNotSynced: 'لم يصل هذا المنشور إلى هذا الجهاز بعد.',

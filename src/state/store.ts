@@ -24,6 +24,7 @@ export type View =
   | { name: 'thread'; root: string }
   | { name: 'profile'; author: string }
   | { name: 'follows' }
+  | { name: 'notifications' }
   | { name: 'dms' }
   | { name: 'dm'; other: string }
   | { name: 'security' }
@@ -55,6 +56,8 @@ interface AppState {
   /** bumped on every ingested message; components re-query off this */
   dataVersion: number
   peers: Record<string, { state: StrategyState; peerCount: number }>
+  /** unread notifications (likes + replies to me); maintained by state/badge.ts */
+  notifUnread: number
   lang: Lang
 }
 
@@ -64,6 +67,7 @@ export const useApp = create<AppState>(() => ({
   view: { name: 'feed' },
   dataVersion: 0,
   peers: {},
+  notifUnread: 0,
   lang: detectLang(),
 }))
 

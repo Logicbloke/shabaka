@@ -5,11 +5,13 @@ import { Feed } from './Feed'
 import { Thread } from './Thread'
 import { Profile } from './Profile'
 import { FollowManager } from './FollowManager'
+import { Notifications } from './Notifications'
 import { DmList } from './DmList'
 import { DmConversation } from './DmConversation'
 import { PeerStatus } from './PeerStatus'
 import { Security } from './Security'
 import { UpdateBanner } from './UpdateBanner'
+import { Toaster } from './Toaster'
 
 export function LangToggle() {
   const lang = useApp((s) => s.lang)
@@ -33,6 +35,8 @@ function Main() {
       return <Profile author={view.author} />
     case 'follows':
       return <FollowManager />
+    case 'notifications':
+      return <Notifications />
     case 'dms':
       return <DmList />
     case 'dm':
@@ -47,6 +51,7 @@ function Main() {
 export function App() {
   const phase = useApp((s) => s.phase)
   const identity = useApp((s) => s.identity)
+  const notifUnread = useApp((s) => s.notifUnread)
   const t = useT()
 
   if (phase !== 'ready' || !identity) {
@@ -56,6 +61,7 @@ export function App() {
   return (
     <div className="app">
       <UpdateBanner />
+      <Toaster />
       <header>
         <span className="brand" onClick={() => navigate({ name: 'feed' })}>
           {t('brand')}
@@ -63,6 +69,10 @@ export function App() {
         <nav>
           <button onClick={() => navigate({ name: 'feed' })}>{t('navFeed')}</button>
           <button onClick={() => navigate({ name: 'follows' })}>{t('navFollows')}</button>
+          <button onClick={() => navigate({ name: 'notifications' })}>
+            {t('navNotifications')}
+            {notifUnread > 0 && <span className="nav-badge">{notifUnread}</span>}
+          </button>
           <button onClick={() => navigate({ name: 'dms' })}>{t('navDms')}</button>
           <button onClick={() => navigate({ name: 'profile', author: identity.pub })}>
             {t('navMe')}

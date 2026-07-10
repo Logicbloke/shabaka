@@ -29,6 +29,7 @@ function loadCursors(): ReadCursors {
         feed: Number(p.feed) || 0,
         replies: Number(p.replies) || 0,
         dms: Number(p.dms) || 0,
+        likes: Number(p.likes) || 0,
       }
     }
   } catch {
@@ -37,7 +38,7 @@ function loadCursors(): ReadCursors {
   // First run (incl. existing installs adopting this feature): treat all prior
   // history as already seen so we don't badge the entire backlog at once.
   const now = nowMs()
-  const fresh: ReadCursors = { feed: now, replies: now, dms: now }
+  const fresh: ReadCursors = { feed: now, replies: now, dms: now, likes: now }
   persist(fresh)
   return fresh
 }
@@ -59,6 +60,9 @@ function bucketsForView(view: View): (keyof ReadCursors)[] {
       return ['feed']
     case 'thread':
       return ['replies']
+    case 'notifications':
+      // The notifications page surfaces both likes and replies to my posts.
+      return ['likes', 'replies']
     case 'dms':
     case 'dm':
       return ['dms']
@@ -100,15 +104,23 @@ function applyCount(n: number): void {
   }
 }
 
+/** Publish the in-app notifications count, but only when it actually changes —
+ * writing state unconditionally would re-trigger our own store subscription. */
+function setNotifUnread(n: number): void {
+  if (useApp.getState().notifUnread !== n) useApp.setState({ notifUnread: n })
+}
+
 async function recompute(): Promise<void> {
   const id = useApp.getState().identity
   if (!id) {
     applyCount(0)
+    setNotifUnread(0)
     return
   }
   try {
     const counts = await withDb((db) => countUnread(db, id.pub, cursors))
     applyCount(counts.total)
+    setNotifUnread(counts.likes + counts.replies)
   } catch {
     // DB not ready / transient failure — leave the current badge as-is
   }
