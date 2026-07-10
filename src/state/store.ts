@@ -64,7 +64,7 @@ interface AppState {
 export const useApp = create<AppState>(() => ({
   phase: 'loading',
   identity: null,
-  view: { name: 'feed' },
+  view: initialView(),
   dataVersion: 0,
   peers: {},
   notifUnread: 0,
@@ -139,6 +139,39 @@ function me(): Identity {
 
 export function navigate(view: View): void {
   useApp.setState({ view })
+}
+
+/**
+ * Public, shareable base URL for the page, or null when there is nothing worth
+ * sharing: served from a file, from localhost, or as an installed PWA (phone
+ * home screen), where the URL points at the reader's own device, not a host.
+ */
+function shareableBase(): string | null {
+  if (typeof location === 'undefined') return null
+  const { protocol, hostname } = location
+  if (protocol === 'file:') return null
+  if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') return null
+  try {
+    if (window.matchMedia?.('(display-mode: standalone)').matches) return null
+    // iOS Safari home-screen apps
+    if ((navigator as { standalone?: boolean }).standalone) return null
+  } catch {
+    // matchMedia unavailable — fall through and treat as a normal page
+  }
+  return location.origin + location.pathname
+}
+
+/** Shareable link to a post's thread, or null when the page isn't hosted. */
+export function postUrl(root: string): string | null {
+  const base = shareableBase()
+  return base ? `${base}#/thread/${root}` : null
+}
+
+/** Initial view derived from the URL hash so shared post links deep-link. */
+function initialView(): View {
+  if (typeof location === 'undefined') return { name: 'feed' }
+  const m = /^#\/thread\/(.+)$/.exec(location.hash)
+  return m ? { name: 'thread', root: decodeURIComponent(m[1]) } : { name: 'feed' }
 }
 
 export async function initApp(): Promise<void> {

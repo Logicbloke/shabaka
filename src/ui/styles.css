@@ -150,11 +150,31 @@ textarea {
 }
 
 .post {
+  display: flex;
+  gap: 8px;
   border: 1px solid var(--border);
   background: var(--panel);
   border-radius: 8px;
   padding: 12px;
   margin: 10px 0;
+}
+
+.post-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.post-link {
+  flex: none;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  text-decoration: none;
+  opacity: 0.55;
+  transition: opacity 0.15s;
+}
+
+.post-link:hover {
+  opacity: 1;
 }
 
 .post-head {

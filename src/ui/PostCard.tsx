@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { getProfile, getReactions, getThread } from '../core/db'
-import { navigate, reactTo, useApp } from '../state/store'
+import { navigate, postUrl, reactTo, useApp } from '../state/store'
 import { shortKey, useQuery } from './hooks'
 import { TimeStamp } from './TimeStamp'
 import { useT } from './i18n'
@@ -33,8 +34,11 @@ export function PostCard({ msg, inThread }: { msg: StoredMessage; inThread?: boo
     [msg.id, msg.type],
   )
 
+  const [linkCopied, setLinkCopied] = useState(false)
+
   const text = cleanText((msg.content as { text?: string }).text ?? '')
   const rootId = msg.type === 'reply' ? (msg.content as ReplyContent).root : msg.id
+  const url = postUrl(rootId)
 
   const counts = new Map<string, number>()
   for (const r of reactions ?? []) {
@@ -47,6 +51,27 @@ export function PostCard({ msg, inThread }: { msg: StoredMessage; inThread?: boo
 
   return (
     <article className="post">
+      {url && (
+        <a
+          className="post-link"
+          href={url}
+          title={linkCopied ? t('linkCopied') : t('copyLink')}
+          aria-label={t('copyLink')}
+          onClick={(e) => {
+            // Copy the shareable link and open the thread in-app rather than
+            // letting the browser follow the hash and reload the router.
+            e.preventDefault()
+            void navigator.clipboard?.writeText(url).then(() => {
+              setLinkCopied(true)
+              setTimeout(() => setLinkCopied(false), 1500)
+            })
+            navigate({ name: 'thread', root: rootId })
+          }}
+        >
+          {linkCopied ? '✅' : '🔗'}
+        </a>
+      )}
+      <div className="post-body">
       <div className="post-head">
         <AuthorLink author={msg.author} hideKey />
         <TimeStamp ts={msg.displayTs} />
@@ -80,6 +105,7 @@ export function PostCard({ msg, inThread }: { msg: StoredMessage; inThread?: boo
             💬 {replies?.length || ''}
           </button>
         )}
+      </div>
       </div>
     </article>
   )
