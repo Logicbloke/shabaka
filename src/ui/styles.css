@@ -362,6 +362,12 @@ textarea {
   color: var(--muted);
 }
 
+.profile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .edit-profile {
   margin: 12px 0;
 }

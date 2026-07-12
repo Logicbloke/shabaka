@@ -86,6 +86,7 @@ export const en = {
   linkCopied: 'link copied!',
   follow: 'Follow',
   unfollow: 'Unfollow',
+  sendMessage: 'Message',
   messagesTotal: 'Messages ({n} total)',
 
   followingTitle: 'Following',
@@ -249,6 +250,7 @@ export const ar: Record<TKey, string> = {
   linkCopied: 'نُسخ الرابط!',
   follow: 'متابعة',
   unfollow: 'إلغاء المتابعة',
+  sendMessage: 'مراسلة',
   messagesTotal: 'الرسائل (المجموع {n})',
 
   followingTitle: 'المتابَعون',

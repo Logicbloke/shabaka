@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { getAuthorMessages, getFollows, getHead, getProfile } from '../core/db'
-import { followKey, saveProfile, unfollowKey, useApp } from '../state/store'
+import { followKey, navigate, saveProfile, unfollowKey, useApp } from '../state/store'
 import { shortKey, useQuery } from './hooks'
 import { useT } from './i18n'
 import { cleanText } from './text'
@@ -101,9 +101,14 @@ export function Profile({ author }: { author: string }) {
       {isSelf ? (
         <EditProfile name={profile?.name ?? ''} bio={profile?.bio ?? ''} />
       ) : (
-        <button onClick={() => void (following ? unfollowKey(author) : followKey(author))}>
-          {following ? t('unfollow') : t('follow')}
-        </button>
+        <div className="profile-actions">
+          <button onClick={() => void (following ? unfollowKey(author) : followKey(author))}>
+            {following ? t('unfollow') : t('follow')}
+          </button>
+          <button onClick={() => navigate({ name: 'dm', other: author })}>
+            {t('sendMessage')}
+          </button>
+        </div>
       )}
       <h3>{t('messagesTotal', { n: head?.seq ?? 0 })}</h3>
       {posts.map((m) => (
