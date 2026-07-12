@@ -376,6 +376,17 @@ textarea {
   line-height: 1.6;
 }
 
+button.danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+button.danger:hover:not(:disabled) {
+  border-color: var(--danger);
+  background: var(--danger);
+  color: #10141a;
+}
+
 .app-version {
   color: var(--muted);
   font-size: 0.85rem;

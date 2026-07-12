@@ -67,7 +67,19 @@ export function Profile({ author }: { author: string }) {
   return (
     <div className="profile">
       <h2 dir="auto">{cleanText(profile?.name ?? '') || shortKey(author)}</h2>
-      {head?.forked && <p className="error">{t('forkWarning')}</p>}
+      {head?.forked && (
+        <p className="error">
+          {t('forkWarning')}
+          {isSelf && (
+            <>
+              {' '}
+              <button className="link" onClick={() => navigate({ name: 'security' })}>
+                {t('forkRecoverLink')}
+              </button>
+            </>
+          )}
+        </p>
+      )}
       {profile?.bio && (
         <p className="bio" dir="auto">
           {cleanText(profile.bio)}

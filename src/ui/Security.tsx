@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react'
 import { exportIdentity } from '../core/identity'
-import { endSession, identityEncrypted, sessionExpiry, useApp } from '../state/store'
+import {
+  endSession,
+  identityEncrypted,
+  resetMyLog,
+  sessionExpiry,
+  useApp,
+} from '../state/store'
 import { useT } from './i18n'
 import { QrCode } from './QrCode'
 
@@ -75,6 +81,17 @@ export function Security() {
         <li>{t('secN5')}</li>
         <li>{t('secN6')}</li>
       </ul>
+
+      <h3>{t('secResyncTitle')}</h3>
+      <p>{t('secResyncBody')}</p>
+      <button
+        className="danger"
+        onClick={() => {
+          if (confirm(t('secResyncConfirm'))) void resetMyLog()
+        }}
+      >
+        {t('secResyncButton')}
+      </button>
 
       <p className="app-version">
         {t('secVersion')} <bdi dir="ltr">{__APP_VERSION__}</bdi>

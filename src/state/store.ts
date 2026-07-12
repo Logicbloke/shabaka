@@ -14,7 +14,7 @@ import {
   unlockIdentity,
 } from '../core/identity'
 import { clearSession, createSession, getSessionExpiry, loadSession } from '../core/session'
-import { appendLocal } from '../core/logstore'
+import { appendLocal, resetAuthorLog } from '../core/logstore'
 import { sealDm } from '../core/dm'
 import { coreEvents, type StrategyState } from '../core/events'
 import type { Content, Identity, MessageType, StoredMessage } from '../core/types'
@@ -260,6 +260,17 @@ export function sessionExpiry(): Promise<number | null> {
 /** Drop the session and lock: reload so in-memory key and network are torn down. */
 export async function endSession(): Promise<void> {
   await clearSession(getDb()).catch(() => {})
+  if (typeof location !== 'undefined') location.reload()
+}
+
+/**
+ * Fork recovery: throw away this device's copy of our own log, then reload so
+ * the network re-init re-pulls the canonical chain from a peer. Only run this on
+ * the device whose history you are abandoning — everything it posted that never
+ * propagated is gone. See `resetAuthorLog`.
+ */
+export async function resetMyLog(): Promise<void> {
+  await withDb((conn) => resetAuthorLog(conn, me().pub))
   if (typeof location !== 'undefined') location.reload()
 }
 

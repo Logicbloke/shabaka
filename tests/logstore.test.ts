@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { generateIdentity, testDb } from './helpers'
-import { appendLocal, rebuildDerived } from '../src/core/logstore'
+import { appendLocal, rebuildDerived, resetAuthorLog } from '../src/core/logstore'
 import { sealDm } from '../src/core/dm'
 import {
+  getAuthorMessages,
   getFollows,
   getHead,
   getProfile,
@@ -100,6 +101,36 @@ describe('logstore', () => {
     const reactions = await getReactions(db, root.id)
     expect(reactions).toHaveLength(1)
     expect(reactions[0]!.type).toBe('reaction')
+  })
+
+  it('resetAuthorLog wipes one author, leaving others intact', async () => {
+    const db = await testDb()
+    const alice = generateIdentity()
+    const bob = generateIdentity()
+    // alice's own log: profile, follow, post
+    await appendLocal(db, alice, 'profile', { name: 'Alice', bio: 'hi' }, 1)
+    await appendLocal(db, alice, 'follow', { target: bob.pub }, 2)
+    await appendLocal(db, alice, 'post', { text: 'mine' }, 3)
+    // bob's log, which alice replicates — must survive the reset
+    await appendLocal(db, bob, 'profile', { name: 'Bob', bio: '' }, 1)
+    await appendLocal(db, bob, 'post', { text: 'bobs' }, 2)
+
+    await resetAuthorLog(db, alice.pub)
+
+    expect(await getAuthorMessages(db, alice.pub)).toHaveLength(0)
+    expect(await getHead(db, alice.pub)).toBeUndefined()
+    expect(await getFollows(db, alice.pub)).toHaveLength(0)
+    expect(await getProfile(db, alice.pub)).toBeUndefined()
+
+    // bob is untouched — reset is per-author
+    expect(await getAuthorMessages(db, bob.pub)).toHaveLength(2)
+    expect((await getHead(db, bob.pub))?.seq).toBe(2)
+    expect((await getProfile(db, bob.pub))?.name).toBe('Bob')
+
+    // the chain re-pulls cleanly from seq 1 afterward
+    const m = await appendLocal(db, alice, 'post', { text: 'fresh' }, 4)
+    expect(m.seq).toBe(1)
+    expect(m.prev).toBeNull()
   })
 
   it('rebuildDerived reconstructs heads/follows/profiles from messages', async () => {

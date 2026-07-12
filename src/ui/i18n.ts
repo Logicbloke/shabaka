@@ -80,6 +80,7 @@ export const en = {
   save: 'Save',
   forkWarning:
     '⚠ This identity has published conflicting message histories (possible key compromise or tampering). Its log no longer replicates cleanly.',
+  forkRecoverLink: 'How to fix this →',
   copyKey: 'copy key',
   copied: 'copied!',
   copyLink: 'copy link to this post',
@@ -130,6 +131,12 @@ export const en = {
     'Your key lives in this browser. Malware or a malicious browser extension can steal it. A passphrase protects the key at rest, not while the app is open.',
   secN6:
     'To tell you when a new version ships, the app periodically contacts GitHub (api.github.com), which reveals your IP to GitHub. It is best-effort — if that request is blocked, the app works exactly the same.',
+  secResyncTitle: 'Fork recovery — reset this device and re-sync',
+  secResyncBody:
+    'If you see a “conflicting histories” warning, the same identity was used to post from more than one install (each keeps its own log — they cannot merge). Pick one device as canonical, then run this on the OTHER one: it discards this device’s copy of your log and re-pulls the canonical chain from a peer. Anything you posted only here and never synced is lost. Make sure the canonical device is online first.',
+  secResyncButton: 'Reset this device’s log',
+  secResyncConfirm:
+    'Discard this device’s copy of your own log and re-sync from the network? Posts made only on this device are permanently lost. This cannot be undone.',
   secVersion: 'You are running version',
 
   qrShow: 'Show QR',
@@ -244,6 +251,7 @@ export const ar: Record<TKey, string> = {
   save: 'حفظ',
   forkWarning:
     '⚠ نشرت هذه الهوية سجلَّي رسائل متعارضين (احتمال اختراق المفتاح أو تلاعب). لن يتزامن سجلها بشكل سليم بعد الآن.',
+  forkRecoverLink: 'كيفية إصلاح ذلك →',
   copyKey: 'نسخ المفتاح',
   copied: 'نُسخ!',
   copyLink: 'نسخ رابط هذا المنشور',
@@ -292,6 +300,12 @@ export const ar: Record<TKey, string> = {
     'مفتاحك يعيش في هذا المتصفح. البرمجيات الخبيثة أو إضافات المتصفح الخبيثة يمكنها سرقته. عبارة المرور تحمي المفتاح المخزّن فقط، لا أثناء فتح التطبيق.',
   secN6:
     'ليُعلمك التطبيق بصدور إصدار جديد، يتصل دوريًا بـGitHub (api.github.com)، ما يكشف عنوان IP الخاص بك لـGitHub. هذا الاتصال قدر المستطاع فقط — إن حُجب، يعمل التطبيق كما هو تمامًا.',
+  secResyncTitle: 'استرداد بعد التفرّع — إعادة ضبط هذا الجهاز والمزامنة',
+  secResyncBody:
+    'إن ظهر لك تحذير «سجلّات متضاربة»، فهذا يعني أن الهوية نفسها استُخدمت للنشر من أكثر من نسخة (كل نسخة تحتفظ بسجلّها ولا يمكن دمجها). اختر جهازًا واحدًا مرجعيًا، ثم شغّل هذا على الجهاز الآخر: يتخلّص من نسخة سجلّك على هذا الجهاز ويعيد سحب السلسلة المرجعية من قرين. أي منشور نشرته هنا فقط ولم يُزامَن يُفقد. تأكّد أولًا أن الجهاز المرجعي متصل.',
+  secResyncButton: 'إعادة ضبط سجلّ هذا الجهاز',
+  secResyncConfirm:
+    'هل تتخلّص من نسخة سجلّك على هذا الجهاز وتعيد المزامنة من الشبكة؟ المنشورات التي أُنشئت على هذا الجهاز فقط تُفقد نهائيًا. لا يمكن التراجع.',
   secVersion: 'النسخة التي تشغّلها',
 
   qrShow: 'إظهار رمز QR',
