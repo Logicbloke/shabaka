@@ -150,8 +150,6 @@ textarea {
 }
 
 .post {
-  display: flex;
-  gap: 8px;
   border: 1px solid var(--border);
   background: var(--panel);
   border-radius: 8px;
@@ -159,18 +157,13 @@ textarea {
   margin: 10px 0;
 }
 
-.post-body {
-  flex: 1;
-  min-width: 0;
-}
-
+/* Push the link to the far end, opposite the 👍/reply group. The row's dir
+   attribute (set from the post text) decides which physical side that is. */
 .post-link {
-  flex: none;
-  font-size: 0.9rem;
-  line-height: 1.4;
+  margin-inline-start: auto;
+  padding: 2px 4px;
   text-decoration: none;
-  opacity: 0.55;
-  transition: opacity 0.15s;
+  opacity: 0.6;
 }
 
 .post-link:hover {

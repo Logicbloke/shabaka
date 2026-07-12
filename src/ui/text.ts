@@ -14,3 +14,19 @@ const STRIP_RE = new RegExp(
 export function cleanText(s: string): string {
   return s.replace(STRIP_RE, '')
 }
+
+// Hebrew, Arabic, Syriac, Thaana, NKo … plus the Arabic presentation forms.
+const RTL_RANGE = /[֐-ࣿיִ-﷿ﹰ-﻿]/
+
+/**
+ * Direction a browser's dir="auto" would pick: the direction of the first
+ * strong directional character, skipping neutral leading digits/punctuation.
+ * Used to lay out chrome (e.g. action rows) so it matches the post's text.
+ */
+export function isRtlText(s: string): boolean {
+  for (const ch of s) {
+    if (RTL_RANGE.test(ch)) return true
+    if (/\p{L}/u.test(ch)) return false
+  }
+  return false
+}

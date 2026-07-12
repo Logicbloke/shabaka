@@ -4,7 +4,7 @@ import { navigate, postUrl, reactTo, useApp } from '../state/store'
 import { shortKey, useQuery } from './hooks'
 import { TimeStamp } from './TimeStamp'
 import { useT } from './i18n'
-import { cleanText } from './text'
+import { cleanText, isRtlText } from './text'
 import type { ReplyContent, StoredMessage } from '../core/types'
 
 export function AuthorLink({ author, hideKey }: { author: string; hideKey?: boolean }) {
@@ -51,27 +51,6 @@ export function PostCard({ msg, inThread }: { msg: StoredMessage; inThread?: boo
 
   return (
     <article className="post">
-      {url && (
-        <a
-          className="post-link"
-          href={url}
-          title={linkCopied ? t('linkCopied') : t('copyLink')}
-          aria-label={t('copyLink')}
-          onClick={(e) => {
-            // Copy the shareable link and open the thread in-app rather than
-            // letting the browser follow the hash and reload the router.
-            e.preventDefault()
-            void navigator.clipboard?.writeText(url).then(() => {
-              setLinkCopied(true)
-              setTimeout(() => setLinkCopied(false), 1500)
-            })
-            navigate({ name: 'thread', root: rootId })
-          }}
-        >
-          {linkCopied ? '✅' : '🔗'}
-        </a>
-      )}
-      <div className="post-body">
       <div className="post-head">
         <AuthorLink author={msg.author} hideKey />
         <TimeStamp ts={msg.displayTs} />
@@ -84,7 +63,9 @@ export function PostCard({ msg, inThread }: { msg: StoredMessage; inThread?: boo
       <p className="post-text" dir="auto">
         {text}
       </p>
-      <div className="post-actions">
+      {/* Row direction follows the post's own text so the link lands on the
+          side opposite the 👍/reply group in both LTR and RTL posts. */}
+      <div className="post-actions" dir={isRtlText(text) ? 'rtl' : 'ltr'}>
         {[...counts.entries()]
           .filter(([emoji]) => emoji !== '👍')
           .map(([emoji, n]) => (
@@ -105,7 +86,26 @@ export function PostCard({ msg, inThread }: { msg: StoredMessage; inThread?: boo
             💬 {replies?.length || ''}
           </button>
         )}
-      </div>
+        {url && (
+          <a
+            className="link post-link"
+            href={url}
+            title={linkCopied ? t('linkCopied') : t('copyLink')}
+            aria-label={t('copyLink')}
+            onClick={(e) => {
+              // Copy the shareable link and open the thread in-app rather than
+              // letting the browser follow the hash and reload the router.
+              e.preventDefault()
+              void navigator.clipboard?.writeText(url).then(() => {
+                setLinkCopied(true)
+                setTimeout(() => setLinkCopied(false), 1500)
+              })
+              navigate({ name: 'thread', root: rootId })
+            }}
+          >
+            {linkCopied ? '✅' : '🔗'}
+          </a>
+        )}
       </div>
     </article>
   )
