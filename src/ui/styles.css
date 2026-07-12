@@ -44,9 +44,16 @@ header {
 
 nav {
   display: flex;
-  flex-wrap: wrap;
   gap: 4px;
   flex: 1;
+}
+
+/* Only wrap the nav where the row would otherwise overflow — phones / the PWA.
+   On a normal desktop browser the buttons fit on one line, so keep it there. */
+@media (max-width: 640px) {
+  nav {
+    flex-wrap: wrap;
+  }
 }
 
 button {
