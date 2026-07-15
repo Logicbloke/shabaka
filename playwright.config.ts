@@ -8,9 +8,10 @@ export default defineConfig({
   globalSetup: './e2e/global-setup.ts',
   use: {
     baseURL: 'http://localhost:5173',
-    // A fake camera + auto-granted permission so the QR scanner can be driven
-    // headlessly (localhost is a secure context, so getUserMedia is available).
-    permissions: ['camera'],
+    // A fake camera/mic + auto-granted permission so the QR scanner and voice
+    // recorder can be driven headlessly (localhost is a secure context, so
+    // getUserMedia is available). The fake device supplies a fake audio track.
+    permissions: ['camera', 'microphone'],
     launchOptions: {
       args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'],
     },

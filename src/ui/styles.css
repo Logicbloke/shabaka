@@ -152,6 +152,56 @@ textarea {
   margin: 16px 0;
 }
 
+.compose-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.record-btn {
+  padding: 6px 10px;
+  line-height: 1;
+}
+
+/* recording + preview strip above the action row */
+.voice-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.voice-bar audio {
+  height: 36px;
+  max-width: 100%;
+}
+
+.voice-timer {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* audio post playback */
+.voice-player {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 8px 0;
+  flex-wrap: wrap;
+}
+
+.voice-player audio {
+  height: 36px;
+  max-width: 100%;
+}
+
+.voice-dur {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
 /* collapsed reply compose — just the toggle button */
 .reply-toggle {
   margin: 4px 0 12px;

@@ -41,6 +41,8 @@ const CSP = [
   // silently if blocked; the app never depends on it.
   "connect-src 'self' ws: wss: https://api.github.com",
   "img-src 'self' data:",
+  // voice messages reassemble to a Blob and play from a blob: URL
+  "media-src 'self' blob:",
   "object-src 'none'",
   "base-uri 'none'",
   "form-action 'none'",

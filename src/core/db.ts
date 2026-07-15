@@ -153,7 +153,7 @@ export async function getTimeline(
     .openCursor(range, 'prev')
   while (cursor && out.length < limit) {
     const m = cursor.value
-    if (authors.has(m.author) && (m.type === 'post' || m.type === 'reply')) {
+    if (authors.has(m.author) && (m.type === 'post' || m.type === 'reply' || m.type === 'audio')) {
       out.push(m)
     }
     cursor = await cursor.continue()

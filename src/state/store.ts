@@ -1,10 +1,13 @@
 import { create } from 'zustand'
 import {
   getIdentityRecord,
+  getMessage,
   openShabakaDb,
   putIdentityRecord,
   type ShabakaDb,
 } from '../core/db'
+import { fromB64url, toB64url } from '../core/b64'
+import { MAX_AUDIO_CHUNKS, MAX_CHUNK_DATA } from '../core/validate'
 import {
   exportIdentity,
   generateIdentity,
@@ -17,7 +20,14 @@ import { clearSession, createSession, getSessionExpiry, loadSession } from '../c
 import { appendLocal, resetAuthorLog } from '../core/logstore'
 import { sealDm } from '../core/dm'
 import { coreEvents, type StrategyState } from '../core/events'
-import type { Content, Identity, MessageType, StoredMessage } from '../core/types'
+import type {
+  AudioChunkContent,
+  AudioContent,
+  Content,
+  Identity,
+  MessageType,
+  StoredMessage,
+} from '../core/types'
 
 export type View =
   | { name: 'feed' }
@@ -309,4 +319,41 @@ export async function unfollowKey(target: string): Promise<void> {
 
 export async function sendDm(to: string, text: string): Promise<void> {
   await append('dm', sealDm(me(), to, text))
+}
+
+/**
+ * Publish a recorded voice clip. The audio can't fit one envelope (16 KB cap),
+ * so its base64 is sliced into `audio-chunk` messages appended first, then an
+ * `audio` manifest naming those chunk msgIds in playback order — the manifest
+ * is the post that renders in the feed. All ride the normal log + sync path.
+ */
+export async function composeVoice(blob: Blob, dur: number, mime: string): Promise<void> {
+  const bytes = new Uint8Array(await blob.arrayBuffer())
+  const b64 = toB64url(bytes)
+  const slices: string[] = []
+  for (let i = 0; i < b64.length; i += MAX_CHUNK_DATA) slices.push(b64.slice(i, i + MAX_CHUNK_DATA))
+  if (slices.length === 0) throw new Error('empty recording')
+  if (slices.length > MAX_AUDIO_CHUNKS) throw new Error('recording too long')
+
+  const chunks: string[] = []
+  for (const data of slices) {
+    const msg = await append('audio-chunk', { data } satisfies AudioChunkContent)
+    chunks.push(msg.id)
+  }
+  await append('audio', { dur: Math.round(dur), mime, chunks } satisfies AudioContent)
+}
+
+/**
+ * Reassemble a voice clip from its chunk messages. Returns null while any chunk
+ * is still missing (not yet synced) — the caller shows a loading state until the
+ * author's log finishes replicating.
+ */
+export async function loadVoiceBytes(content: AudioContent): Promise<Uint8Array | null> {
+  const parts = await withDb((conn) => Promise.all(content.chunks.map((id) => getMessage(conn, id))))
+  let b64 = ''
+  for (const p of parts) {
+    if (!p || p.type !== 'audio-chunk') return null
+    b64 += (p.content as AudioChunkContent).data
+  }
+  return fromB64url(b64)
 }

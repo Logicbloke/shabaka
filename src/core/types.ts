@@ -6,6 +6,8 @@ export type MessageType =
   | 'follow'
   | 'unfollow'
   | 'dm'
+  | 'audio'
+  | 'audio-chunk'
 
 export interface PostContent {
   text: string
@@ -41,6 +43,27 @@ export interface DmContent {
   box: string
 }
 
+/**
+ * A voice message manifest: the post that renders in the feed. The audio bytes
+ * do not fit one envelope (16 KB cap), so they ride in separate `audio-chunk`
+ * messages earlier in the same author's log; `chunks` lists their msgIds in
+ * playback order.
+ */
+export interface AudioContent {
+  /** clip length in ms */
+  dur: number
+  /** MediaRecorder container mime, used to rebuild the Blob for playback */
+  mime: string
+  /** ordered msgIds (b64url-32) of the audio-chunk messages */
+  chunks: string[]
+}
+
+/** One slice of a voice clip's base64 audio, referenced by an AudioContent. */
+export interface AudioChunkContent {
+  /** b64url slice of the clip's base64 bytes */
+  data: string
+}
+
 export type Content =
   | PostContent
   | ReplyContent
@@ -48,6 +71,8 @@ export type Content =
   | ProfileContent
   | FollowContent
   | DmContent
+  | AudioContent
+  | AudioChunkContent
 
 /**
  * The wire format. Per-author signed hash chain: `prev` is the msgId of the

@@ -1,11 +1,44 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { getProfile, getReactions, getThread } from '../core/db'
-import { navigate, postUrl, reactTo, useApp } from '../state/store'
+import { loadVoiceBytes, navigate, postUrl, reactTo, useApp } from '../state/store'
 import { shortKey, useQuery } from './hooks'
 import { TimeStamp } from './TimeStamp'
 import { useT } from './i18n'
 import { cleanText, isRtlText } from './text'
-import type { ReplyContent, StoredMessage } from '../core/types'
+import type { AudioContent, ReplyContent, StoredMessage } from '../core/types'
+
+function clock(ms: number): string {
+  const sec = Math.round(ms / 1000)
+  return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`
+}
+
+/** Reassembles a voice clip from its chunk messages, waiting as they sync in. */
+function VoicePlayer({ msg }: { msg: StoredMessage }) {
+  const t = useT()
+  const content = msg.content as AudioContent
+  // Re-runs on every ingest (useQuery keys on dataVersion), so the clip
+  // completes on its own as the author's chunk messages replicate.
+  const bytes = useQuery(() => loadVoiceBytes(content), [msg.id])
+  const [url, setUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!bytes) {
+      setUrl(null)
+      return
+    }
+    const u = URL.createObjectURL(new Blob([bytes as BlobPart], { type: content.mime }))
+    setUrl(u)
+    return () => URL.revokeObjectURL(u)
+  }, [bytes, content.mime])
+
+  if (!url) return <p className="hint">{t('voiceLoading')}</p>
+  return (
+    <div className="voice-player">
+      <audio controls src={url} aria-label={t('voiceMessage')} />
+      <span className="voice-dur">{clock(content.dur)}</span>
+    </div>
+  )
+}
 
 export function AuthorLink({ author, hideKey }: { author: string; hideKey?: boolean }) {
   const profile = useQuery((db) => getProfile(db, author), [author])
@@ -60,9 +93,13 @@ export function PostCard({ msg, inThread }: { msg: StoredMessage; inThread?: boo
           </button>
         )}
       </div>
-      <p className="post-text" dir="auto">
-        {text}
-      </p>
+      {msg.type === 'audio' ? (
+        <VoicePlayer msg={msg} />
+      ) : (
+        <p className="post-text" dir="auto">
+          {text}
+        </p>
+      )}
       {/* Row direction follows the post's own text so the link lands on the
           side opposite the 👍/reply group in both LTR and RTL posts. */}
       <div className="post-actions" dir={isRtlText(text) ? 'rtl' : 'ltr'}>

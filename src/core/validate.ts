@@ -17,10 +17,28 @@ export const MAX_TEXT = 8192
 export const MAX_NAME = 64
 export const MAX_BIO = 1024
 export const MAX_EMOJI = 16
+/** voice clip length ceiling (ms) */
+export const MAX_AUDIO_MS = 30000
+/** max audio-chunk messages one clip may reference */
+export const MAX_AUDIO_CHUNKS = 64
+/** max b64url length of one chunk's `data` (stays well under the 16 KB envelope cap) */
+export const MAX_CHUNK_DATA = 12000
+/** MediaRecorder containers we accept for playback */
+export const AUDIO_MIMES = new Set(['audio/webm', 'audio/mp4', 'audio/ogg'])
 const B64_24 = 32 // b64url length of a 24-byte nonce
 
 const ENVELOPE_KEYS = ['v', 'author', 'seq', 'prev', 'ts', 'type', 'content', 'sig']
-const TYPES = new Set(['post', 'reply', 'reaction', 'profile', 'follow', 'unfollow', 'dm'])
+const TYPES = new Set([
+  'post',
+  'reply',
+  'reaction',
+  'profile',
+  'follow',
+  'unfollow',
+  'dm',
+  'audio',
+  'audio-chunk',
+])
 
 function isB64(s: unknown, len: number): s is string {
   return typeof s === 'string' && s.length === len && isCanonicalB64url(s)
@@ -75,6 +93,31 @@ function contentError(type: string, c: Record<string, unknown>): string | null {
         !B64URL_RE.test(c.box as string)
       )
         return 'bad dm content'
+      return null
+    case 'audio':
+      if (
+        !hasExactKeys(c, ['dur', 'mime', 'chunks']) ||
+        typeof c.dur !== 'number' ||
+        !Number.isSafeInteger(c.dur) ||
+        c.dur <= 0 ||
+        c.dur > MAX_AUDIO_MS ||
+        typeof c.mime !== 'string' ||
+        !AUDIO_MIMES.has(c.mime) ||
+        !Array.isArray(c.chunks) ||
+        c.chunks.length < 1 ||
+        c.chunks.length > MAX_AUDIO_CHUNKS ||
+        !c.chunks.every((id) => isB64(id, B64_32))
+      )
+        return 'bad audio content'
+      return null
+    case 'audio-chunk':
+      if (
+        !hasExactKeys(c, ['data']) ||
+        !isStr(c.data, MAX_CHUNK_DATA) ||
+        (c.data as string).length === 0 ||
+        !B64URL_RE.test(c.data as string)
+      )
+        return 'bad audio-chunk content'
       return null
     default:
       return 'unknown type'
