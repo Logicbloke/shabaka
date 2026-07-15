@@ -1,14 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { composePost, composeReply, composeVoice } from '../state/store'
-import { MAX_AUDIO_MS, MAX_TEXT } from '../core/validate'
+import { MAX_TEXT } from '../core/validate'
 import { useT } from './i18n'
-import { hasRecorder, useVoiceRecorder } from './voice'
-import type { RecorderError } from './voice'
-
-function clock(ms: number): string {
-  const sec = Math.floor(ms / 1000)
-  return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`
-}
+import { VoiceComposer } from './VoiceComposer'
 
 export function Compose({ root, parent }: { root?: string; parent?: string }) {
   const t = useT()
@@ -17,10 +11,6 @@ export function Compose({ root, parent }: { root?: string; parent?: string }) {
   const [error, setError] = useState<string | null>(null)
   const [open, setOpen] = useState(false)
   const isReply = root !== undefined && parent !== undefined
-  const voice = useVoiceRecorder()
-  // Voice is public posts only; skip it in reply mode. Otherwise show it
-  // whenever MediaRecorder exists and let start() explain any failure.
-  const canRecord = useMemo(() => !isReply && hasRecorder(), [isReply])
 
   if (isReply && !open) {
     return (
@@ -29,29 +19,6 @@ export function Compose({ root, parent }: { root?: string; parent?: string }) {
       </button>
     )
   }
-
-  async function postVoice() {
-    if (!voice.clip) return
-    setBusy(true)
-    setError(null)
-    try {
-      await composeVoice(voice.clip.blob, voice.clip.dur, voice.clip.mime)
-      voice.discard()
-    } catch {
-      setError(t('msgRejected'))
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  const VOICE_ERROR: Record<RecorderError, string> = {
-    insecure: t('micInsecure'),
-    denied: t('micDenied'),
-    nomic: t('micNoDevice'),
-    unsupported: t('voiceUnsupported'),
-    error: t('micError'),
-  }
-  const voiceError = voice.error ? VOICE_ERROR[voice.error] : null
 
   return (
     <form
@@ -82,52 +49,17 @@ export function Compose({ root, parent }: { root?: string; parent?: string }) {
         autoFocus={isReply}
       />
 
-      {voice.status === 'recording' && (
-        <div className="voice-bar">
-          <span className="voice-timer" aria-live="polite">
-            ● {clock(voice.elapsed)} / {clock(MAX_AUDIO_MS)}
-          </span>
-          <button type="button" onClick={voice.stop}>
-            {t('stopRecording')}
-          </button>
-        </div>
-      )}
-
-      {voice.status === 'preview' && voice.clip && (
-        <div className="voice-bar">
-          <audio controls src={voice.clip.url} />
-          <button type="button" disabled={busy} onClick={postVoice}>
-            {t('postVoice')}
-          </button>
-          <button
-            type="button"
-            className="link"
-            disabled={busy}
-            onClick={voice.discard}
-            aria-label={t('discardRecording')}
-          >
-            ✕
-          </button>
-        </div>
-      )}
-
       <div className="compose-actions">
         <button disabled={busy || !text.trim()}>{isReply ? t('reply') : t('post')}</button>
-        {canRecord && voice.status === 'idle' && (
-          <button
-            type="button"
-            className="record-btn"
-            disabled={busy}
-            onClick={() => void voice.start()}
-            aria-label={t('record')}
-            title={t('record')}
-          >
-            🎙️
-          </button>
+        {/* Voice is public posts only; skip it in reply mode. */}
+        {!isReply && (
+          <VoiceComposer
+            onPost={(clip) => composeVoice(clip.blob, clip.dur, clip.mime)}
+          />
         )}
       </div>
 
-      {(error || voiceError) && <p className="error">{error ?? voiceError}</p>}
+      {error && <p className="error">{error}</p>}
     </form>
   )
 }

@@ -72,6 +72,24 @@ export function hasRecorder(): boolean {
   return typeof MediaRecorder !== 'undefined'
 }
 
+/** i18n key for each recorder error (keys live in i18n.ts en/ar). */
+export function voiceErrorKey(
+  e: RecorderError,
+): 'micInsecure' | 'micDenied' | 'micNoDevice' | 'voiceUnsupported' | 'micError' {
+  switch (e) {
+    case 'insecure':
+      return 'micInsecure'
+    case 'denied':
+      return 'micDenied'
+    case 'nomic':
+      return 'micNoDevice'
+    case 'unsupported':
+      return 'voiceUnsupported'
+    case 'error':
+      return 'micError'
+  }
+}
+
 export interface Clip {
   blob: Blob
   /** object URL for the preview <audio>; owned by the hook, revoked on discard/unmount */

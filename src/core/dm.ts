@@ -35,6 +35,40 @@ export function sealDm(me: Identity, toPub: string, text: string): DmContent {
   return { to: toPub, n: toB64url(nonce), box: toB64url(box) }
 }
 
+/**
+ * Seal raw voice bytes for a recipient (same key schedule as text DMs). Returns
+ * the nonce and ciphertext; the caller base64s and chunks the ciphertext into
+ * `audio-chunk` messages and records the nonce in the `dm-audio` manifest.
+ */
+export function sealDmAudio(
+  me: Identity,
+  toPub: string,
+  bytes: Uint8Array,
+): { to: string; n: string; cipher: Uint8Array } {
+  const nonce = randomBytes(24)
+  const cipher = xchacha20poly1305(dmKey(me, toPub), nonce, dmAad(me.pub, toPub)).encrypt(bytes)
+  return { to: toPub, n: toB64url(nonce), cipher }
+}
+
+/** Decrypt reassembled voice ciphertext. Null when it is not ours or fails to authenticate. */
+export function openDmAudio(
+  me: Identity,
+  author: string,
+  toPub: string,
+  n: string,
+  cipher: Uint8Array,
+): Uint8Array | null {
+  let other: string
+  if (author === me.pub) other = toPub
+  else if (toPub === me.pub) other = author
+  else return null
+  try {
+    return xchacha20poly1305(dmKey(me, other), fromB64url(n), dmAad(author, toPub)).decrypt(cipher)
+  } catch {
+    return null
+  }
+}
+
 /** Returns null when the DM is not for us or fails to authenticate. */
 export function openDm(me: Identity, env: Envelope): { text: string } | null {
   if (env.type !== 'dm') return null

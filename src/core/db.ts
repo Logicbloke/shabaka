@@ -222,9 +222,14 @@ export function deletePending(db: ShabakaDb, id: string): Promise<void> {
 }
 
 export async function getDmMessages(db: ShabakaDb, selfPub: string): Promise<StoredMessage[]> {
-  const [received, sentIndex] = await Promise.all([
+  const [received, sentDm, sentAudio] = await Promise.all([
     db.getAllFromIndex('messages', 'by-target', selfPub),
     db.getAllFromIndex('messages', 'by-author-type', [selfPub, 'dm']),
+    db.getAllFromIndex('messages', 'by-author-type', [selfPub, 'dm-audio']),
   ])
-  return [...received.filter((m) => m.type === 'dm'), ...sentIndex]
+  return [
+    ...received.filter((m) => m.type === 'dm' || m.type === 'dm-audio'),
+    ...sentDm,
+    ...sentAudio,
+  ]
 }

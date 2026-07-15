@@ -8,6 +8,7 @@ export type MessageType =
   | 'dm'
   | 'audio'
   | 'audio-chunk'
+  | 'dm-audio'
 
 export interface PostContent {
   text: string
@@ -58,10 +59,30 @@ export interface AudioContent {
   chunks: string[]
 }
 
-/** One slice of a voice clip's base64 audio, referenced by an AudioContent. */
+/**
+ * One slice of a voice clip's base64, referenced by an AudioContent or
+ * DmAudioContent. For public clips it holds base64 of the raw audio; for DM
+ * clips it holds base64 of the encrypted audio (opaque either way).
+ */
 export interface AudioChunkContent {
   /** b64url slice of the clip's base64 bytes */
   data: string
+}
+
+/**
+ * An encrypted voice message manifest (the DM counterpart of AudioContent).
+ * The audio is sealed once (X25519 + XChaCha20, like a text DM) and its
+ * ciphertext base64 is chunked into `audio-chunk` messages named by `chunks`.
+ * As with text DMs the metadata here (to, duration) is public; the audio is not.
+ */
+export interface DmAudioContent {
+  to: string
+  /** b64url 24-byte XChaCha20 nonce */
+  n: string
+  mime: string
+  dur: number
+  /** ordered msgIds (b64url-32) of the audio-chunk messages holding ciphertext */
+  chunks: string[]
 }
 
 export type Content =
@@ -73,6 +94,7 @@ export type Content =
   | DmContent
   | AudioContent
   | AudioChunkContent
+  | DmAudioContent
 
 /**
  * The wire format. Per-author signed hash chain: `prev` is the msgId of the

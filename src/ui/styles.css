@@ -156,6 +156,13 @@ textarea {
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-wrap: wrap;
+}
+
+/* recording strip / preview takes its own line under the button row */
+.compose-actions .voice-bar {
+  flex-basis: 100%;
+  margin-bottom: 0;
 }
 
 .record-btn {

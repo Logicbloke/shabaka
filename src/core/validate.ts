@@ -38,6 +38,7 @@ const TYPES = new Set([
   'dm',
   'audio',
   'audio-chunk',
+  'dm-audio',
 ])
 
 function isB64(s: unknown, len: number): s is string {
@@ -118,6 +119,24 @@ function contentError(type: string, c: Record<string, unknown>): string | null {
         !B64URL_RE.test(c.data as string)
       )
         return 'bad audio-chunk content'
+      return null
+    case 'dm-audio':
+      if (
+        !hasExactKeys(c, ['to', 'n', 'mime', 'dur', 'chunks']) ||
+        !isB64(c.to, B64_32) ||
+        !isB64(c.n, B64_24) ||
+        typeof c.mime !== 'string' ||
+        !AUDIO_MIMES.has(c.mime) ||
+        typeof c.dur !== 'number' ||
+        !Number.isSafeInteger(c.dur) ||
+        c.dur <= 0 ||
+        c.dur > MAX_AUDIO_MS ||
+        !Array.isArray(c.chunks) ||
+        c.chunks.length < 1 ||
+        c.chunks.length > MAX_AUDIO_CHUNKS ||
+        !c.chunks.every((id) => isB64(id, B64_32))
+      )
+        return 'bad dm-audio content'
       return null
     default:
       return 'unknown type'

@@ -18,12 +18,13 @@ import {
 } from '../core/identity'
 import { clearSession, createSession, getSessionExpiry, loadSession } from '../core/session'
 import { appendLocal, resetAuthorLog } from '../core/logstore'
-import { sealDm } from '../core/dm'
+import { openDmAudio, sealDm, sealDmAudio } from '../core/dm'
 import { coreEvents, type StrategyState } from '../core/events'
 import type {
   AudioChunkContent,
   AudioContent,
   Content,
+  DmAudioContent,
   Identity,
   MessageType,
   StoredMessage,
@@ -322,38 +323,83 @@ export async function sendDm(to: string, text: string): Promise<void> {
 }
 
 /**
- * Publish a recorded voice clip. The audio can't fit one envelope (16 KB cap),
- * so its base64 is sliced into `audio-chunk` messages appended first, then an
- * `audio` manifest naming those chunk msgIds in playback order — the manifest
- * is the post that renders in the feed. All ride the normal log + sync path.
+ * Slice a base64 string into `audio-chunk` messages (audio can't fit one 16 KB
+ * envelope) and return their msgIds in order. Used by both public and DM voice.
  */
-export async function composeVoice(blob: Blob, dur: number, mime: string): Promise<void> {
-  const bytes = new Uint8Array(await blob.arrayBuffer())
-  const b64 = toB64url(bytes)
+async function appendAudioChunks(b64: string): Promise<string[]> {
   const slices: string[] = []
   for (let i = 0; i < b64.length; i += MAX_CHUNK_DATA) slices.push(b64.slice(i, i + MAX_CHUNK_DATA))
   if (slices.length === 0) throw new Error('empty recording')
   if (slices.length > MAX_AUDIO_CHUNKS) throw new Error('recording too long')
-
   const chunks: string[] = []
   for (const data of slices) {
     const msg = await append('audio-chunk', { data } satisfies AudioChunkContent)
     chunks.push(msg.id)
   }
-  await append('audio', { dur: Math.round(dur), mime, chunks } satisfies AudioContent)
+  return chunks
 }
 
-/**
- * Reassemble a voice clip from its chunk messages. Returns null while any chunk
- * is still missing (not yet synced) — the caller shows a loading state until the
- * author's log finishes replicating.
- */
-export async function loadVoiceBytes(content: AudioContent): Promise<Uint8Array | null> {
-  const parts = await withDb((conn) => Promise.all(content.chunks.map((id) => getMessage(conn, id))))
+/** Concatenate the base64 held by a manifest's chunk messages; null if any is missing. */
+async function joinAudioChunks(chunkIds: string[]): Promise<string | null> {
+  const parts = await withDb((conn) => Promise.all(chunkIds.map((id) => getMessage(conn, id))))
   let b64 = ''
   for (const p of parts) {
     if (!p || p.type !== 'audio-chunk') return null
     b64 += (p.content as AudioChunkContent).data
   }
-  return fromB64url(b64)
+  return b64
+}
+
+/**
+ * Publish a recorded voice clip. The chunk messages are appended first, then an
+ * `audio` manifest naming them in playback order — the manifest is the post that
+ * renders in the feed. All ride the normal log + sync path.
+ */
+export async function composeVoice(blob: Blob, dur: number, mime: string): Promise<void> {
+  const bytes = new Uint8Array(await blob.arrayBuffer())
+  const chunks = await appendAudioChunks(toB64url(bytes))
+  await append('audio', { dur: Math.round(dur), mime, chunks } satisfies AudioContent)
+}
+
+/**
+ * Send a recorded voice clip as an encrypted DM: the audio is sealed for the
+ * recipient, its ciphertext base64 is chunked, and a `dm-audio` manifest carries
+ * the nonce + chunk refs. Only the recipient (or the sender) can decrypt it.
+ */
+export async function composeVoiceDm(
+  to: string,
+  blob: Blob,
+  dur: number,
+  mime: string,
+): Promise<void> {
+  const bytes = new Uint8Array(await blob.arrayBuffer())
+  const { n, cipher } = sealDmAudio(me(), to, bytes)
+  const chunks = await appendAudioChunks(toB64url(cipher))
+  await append('dm-audio', { to, n, mime, dur: Math.round(dur), chunks } satisfies DmAudioContent)
+}
+
+/**
+ * Reassemble a public voice clip from its chunk messages. Returns null while any
+ * chunk is still missing (not yet synced) — the caller shows a loading state.
+ */
+export async function loadVoiceBytes(content: AudioContent): Promise<Uint8Array | null> {
+  const b64 = await joinAudioChunks(content.chunks)
+  return b64 === null ? null : fromB64url(b64)
+}
+
+export type VoiceDmResult =
+  | { kind: 'ok'; bytes: Uint8Array }
+  | { kind: 'incomplete' } // chunks not fully synced yet
+  | { kind: 'error' } // reassembled but not decryptable (not ours / tampered)
+
+/** Reassemble and decrypt a voice DM for the given identity. */
+export async function loadVoiceDmBytes(
+  identity: Identity,
+  msg: StoredMessage,
+): Promise<VoiceDmResult> {
+  const content = msg.content as DmAudioContent
+  const b64 = await joinAudioChunks(content.chunks)
+  if (b64 === null) return { kind: 'incomplete' }
+  const bytes = openDmAudio(identity, msg.author, content.to, content.n, fromB64url(b64))
+  return bytes ? { kind: 'ok', bytes } : { kind: 'error' }
 }
