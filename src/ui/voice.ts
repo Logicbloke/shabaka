@@ -42,7 +42,35 @@ export function detectVoice(): VoiceSupport {
 }
 
 export type RecorderStatus = 'idle' | 'recording' | 'preview'
-export type RecorderError = 'unsupported' | 'denied'
+/**
+ * - `insecure`: not a secure context — getUserMedia is blocked on plain http://
+ *   origins (anything but https:// or localhost) and never even prompts
+ * - `denied`: the user (or a remembered decision) refused the mic
+ * - `nomic`: no microphone available / in use by another app
+ * - `unsupported`: no MediaRecorder or no encodable container
+ * - `error`: anything else
+ */
+export type RecorderError = 'insecure' | 'denied' | 'nomic' | 'unsupported' | 'error'
+
+/**
+ * getUserMedia needs a secure context. Browsers expose this as
+ * `window.isSecureContext`; on insecure origins some also drop
+ * `navigator.mediaDevices` entirely, so treat a missing entry point the same.
+ */
+export function isSecureForMedia(): boolean {
+  if (typeof window !== 'undefined' && window.isSecureContext === false) return false
+  return typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia
+}
+
+/**
+ * Whether to offer the record control at all. Deliberately lenient — if the
+ * browser has MediaRecorder we show the button and let `start()` report the
+ * precise reason (insecure origin, denied, no mic) rather than hiding the
+ * feature silently, which just looks broken.
+ */
+export function hasRecorder(): boolean {
+  return typeof MediaRecorder !== 'undefined'
+}
 
 export interface Clip {
   blob: Blob
@@ -92,6 +120,12 @@ export function useVoiceRecorder(): VoiceRecorder {
   }, [])
 
   const start = useCallback(async () => {
+    // Check this first: on a plain http:// origin the browser blocks the mic
+    // outright and never prompts, which otherwise looks like a flat "denied".
+    if (!isSecureForMedia()) {
+      setError('insecure')
+      return
+    }
     const support = detectVoice()
     if (!support.supported || !support.mime) {
       setError('unsupported')
@@ -101,8 +135,13 @@ export function useVoiceRecorder(): VoiceRecorder {
     let stream: MediaStream
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-    } catch {
-      setError('denied')
+    } catch (e) {
+      const name = e instanceof DOMException ? e.name : ''
+      if (name === 'SecurityError') setError('insecure')
+      else if (name === 'NotAllowedError') setError('denied')
+      else if (name === 'NotFoundError' || name === 'OverconstrainedError' || name === 'NotReadableError')
+        setError('nomic')
+      else setError('error')
       return
     }
     streamRef.current = stream

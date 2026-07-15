@@ -63,7 +63,11 @@ export const en = {
   postVoice: 'Post voice',
   voiceMessage: 'Voice message',
   voiceLoading: 'Loading voice message…',
-  micDenied: 'Microphone access was denied.',
+  micInsecure:
+    'Voice recording needs a secure (https://) connection — the browser blocks the microphone otherwise.',
+  micDenied: 'Microphone access was blocked. Allow the mic for this site in your browser settings.',
+  micNoDevice: 'No microphone was found, or it is in use by another app.',
+  micError: 'Could not start recording.',
   voiceUnsupported: 'Voice recording is not supported on this device.',
 
   inThread: 'in thread',
@@ -243,7 +247,10 @@ export const ar: Record<TKey, string> = {
   postVoice: 'نشر الصوت',
   voiceMessage: 'رسالة صوتية',
   voiceLoading: 'جارٍ تحميل الرسالة الصوتية…',
-  micDenied: 'تم رفض الوصول إلى الميكروفون.',
+  micInsecure: 'يتطلب التسجيل الصوتي اتصالًا آمنًا (https://) — وإلا يحظر المتصفح الميكروفون.',
+  micDenied: 'تم حظر الوصول إلى الميكروفون. اسمح للميكروفون لهذا الموقع من إعدادات المتصفح.',
+  micNoDevice: 'لم يُعثر على ميكروفون، أو أنه مستخدم من تطبيق آخر.',
+  micError: 'تعذّر بدء التسجيل.',
   voiceUnsupported: 'التسجيل الصوتي غير مدعوم على هذا الجهاز.',
 
   inThread: 'ضمن نقاش',

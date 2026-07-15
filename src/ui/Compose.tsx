@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react'
 import { composePost, composeReply, composeVoice } from '../state/store'
 import { MAX_AUDIO_MS, MAX_TEXT } from '../core/validate'
 import { useT } from './i18n'
-import { detectVoice, useVoiceRecorder } from './voice'
+import { hasRecorder, useVoiceRecorder } from './voice'
+import type { RecorderError } from './voice'
 
 function clock(ms: number): string {
   const sec = Math.floor(ms / 1000)
@@ -17,8 +18,9 @@ export function Compose({ root, parent }: { root?: string; parent?: string }) {
   const [open, setOpen] = useState(false)
   const isReply = root !== undefined && parent !== undefined
   const voice = useVoiceRecorder()
-  // Voice is public posts only; skip it in reply mode and where unsupported.
-  const canRecord = useMemo(() => !isReply && detectVoice().supported, [isReply])
+  // Voice is public posts only; skip it in reply mode. Otherwise show it
+  // whenever MediaRecorder exists and let start() explain any failure.
+  const canRecord = useMemo(() => !isReply && hasRecorder(), [isReply])
 
   if (isReply && !open) {
     return (
@@ -42,12 +44,14 @@ export function Compose({ root, parent }: { root?: string; parent?: string }) {
     }
   }
 
-  const voiceError =
-    voice.error === 'denied'
-      ? t('micDenied')
-      : voice.error === 'unsupported'
-        ? t('voiceUnsupported')
-        : null
+  const VOICE_ERROR: Record<RecorderError, string> = {
+    insecure: t('micInsecure'),
+    denied: t('micDenied'),
+    nomic: t('micNoDevice'),
+    unsupported: t('voiceUnsupported'),
+    error: t('micError'),
+  }
+  const voiceError = voice.error ? VOICE_ERROR[voice.error] : null
 
   return (
     <form
