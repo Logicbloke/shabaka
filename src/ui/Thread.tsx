@@ -8,10 +8,12 @@ import type { ReplyContent, StoredMessage } from '../core/types'
 function ReplyTree({
   parentId,
   root,
+  focus,
   byParent,
 }: {
   parentId: string
   root: string
+  focus?: string
   byParent: Map<string, StoredMessage[]>
 }) {
   const children = byParent.get(parentId) ?? []
@@ -19,16 +21,16 @@ function ReplyTree({
     <>
       {children.map((r) => (
         <div key={r.id} className="reply-branch">
-          <PostCard msg={r} inThread />
+          <PostCard msg={r} inThread focused={r.id === focus} />
           <Compose root={root} parent={r.id} />
-          <ReplyTree parentId={r.id} root={root} byParent={byParent} />
+          <ReplyTree parentId={r.id} root={root} focus={focus} byParent={byParent} />
         </div>
       ))}
     </>
   )
 }
 
-export function Thread({ root }: { root: string }) {
+export function Thread({ root, focus }: { root: string; focus?: string }) {
   const t = useT()
   const rootMsg = useQuery((db) => getMessage(db, root), [root])
   const replies = useQuery((db) => getThread(db, root), [root])
@@ -49,9 +51,9 @@ export function Thread({ root }: { root: string }) {
 
   return (
     <div className="thread">
-      <PostCard msg={rootMsg} inThread />
+      <PostCard msg={rootMsg} inThread focused={rootMsg.id === focus} />
       <Compose root={root} parent={root} />
-      <ReplyTree parentId={root} root={root} byParent={byParent} />
+      <ReplyTree parentId={root} root={root} focus={focus} byParent={byParent} />
     </div>
   )
 }

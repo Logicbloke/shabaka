@@ -263,6 +263,33 @@ textarea {
   font-size: 0.85rem;
 }
 
+/* Named list of followed people who liked a post. */
+.reaction-likers {
+  margin-top: 6px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.reaction-likers .likers-label {
+  color: var(--muted);
+}
+
+/* A post a notification deep-linked to: briefly ringed so the eye lands on it. */
+.post-focused {
+  animation: post-focus-flash 2.4s ease-out 1;
+  border-radius: 8px;
+}
+
+@keyframes post-focus-flash {
+  0%,
+  55% {
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+  100% {
+    box-shadow: 0 0 0 2px transparent;
+  }
+}
+
 .reply-branch {
   margin-inline-start: 20px;
   border-inline-start: 2px solid var(--border);

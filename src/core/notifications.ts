@@ -21,6 +21,8 @@ export interface Notification {
   ts: number
   /** thread root to open when the notification is tapped */
   rootId: string
+  /** msgId of my post/reply that was acted on — the exact post to focus */
+  targetId: string
   /** raw text of my post/reply that was acted on */
   targetText: string
   /** raw text of the reply (kind === 'reply') */
@@ -38,6 +40,7 @@ function build(target: StoredMessage, m: StoredMessage): Notification {
     actor: m.author,
     ts: m.displayTs,
     rootId,
+    targetId: target.id,
     targetText: (target.content as { text?: string }).text ?? '',
   }
   if (m.type === 'reaction') {
@@ -60,6 +63,9 @@ export async function getNotifications(
   const mineById = new Map(mine.map((x) => [x.id, x]))
 
   const out: Notification[] = []
+  // Collapse duplicate reactions (same actor + same emoji on the same post),
+  // which a forked log or a misbehaving client can produce — see dedupeReactions.
+  const seenLikes = new Set<string>()
   let cursor = await db
     .transaction('messages')
     .store.index('by-display-ts')
@@ -68,8 +74,13 @@ export async function getNotifications(
     const m = cursor.value
     if (m.author !== selfPub) {
       if (m.type === 'reaction') {
-        const target = mineById.get((m.content as ReactionContent).target)
-        if (target) out.push(build(target, m))
+        const c = m.content as ReactionContent
+        const target = mineById.get(c.target)
+        const likeKey = m.author + '\t' + c.target + '\t' + c.emoji
+        if (target && !seenLikes.has(likeKey)) {
+          seenLikes.add(likeKey)
+          out.push(build(target, m))
+        }
       } else if (m.type === 'reply') {
         const target = mineById.get((m.content as ReplyContent).parent)
         if (target) out.push(build(target, m))

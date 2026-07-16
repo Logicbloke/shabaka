@@ -1,5 +1,5 @@
 import { getAuthorMessages, getFollows, type ShabakaDb } from './db'
-import type { ReplyContent } from './types'
+import type { ReactionContent, ReplyContent } from './types'
 
 /**
  * Per-category "everything up to this displayTs is read" cursors. Persisted by
@@ -51,6 +51,9 @@ export async function countUnread(
   let replies = 0
   let dms = 0
   let likes = 0
+  // A forked log or misbehaving client can emit the same reaction twice; count
+  // one per (actor, post, emoji) so a double "like" doesn't inflate the badge.
+  const seenLikes = new Set<string>()
 
   let cursor = await db
     .transaction('messages')
@@ -64,7 +67,11 @@ export async function countUnread(
       } else if (m.type === 'reply' && mineIds.has((m.content as ReplyContent).parent)) {
         if (m.displayTs > cursors.replies) replies++
       } else if (m.type === 'reaction' && mineIds.has(m.target ?? '')) {
-        if (m.displayTs > cursors.likes) likes++
+        const likeKey = m.author + '\t' + m.target + '\t' + (m.content as ReactionContent).emoji
+        if (m.displayTs > cursors.likes && !seenLikes.has(likeKey)) {
+          seenLikes.add(likeKey)
+          likes++
+        }
       } else if ((m.type === 'post' || m.type === 'reply') && follows.has(m.author)) {
         if (m.displayTs > cursors.feed) feed++
       }

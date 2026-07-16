@@ -73,6 +73,7 @@ export const en = {
   inThread: 'in thread',
   alreadyReacted: 'already reacted',
   react: 'react',
+  likedBy: 'Liked by',
 
   notifTitle: 'Notifications',
   notifEmpty:
@@ -256,6 +257,7 @@ export const ar: Record<TKey, string> = {
   inThread: 'ضمن نقاش',
   alreadyReacted: 'تفاعلت بالفعل',
   react: 'تفاعل',
+  likedBy: 'أعجب به',
 
   notifTitle: 'الإشعارات',
   notifEmpty: 'لا إشعارات بعد. عندما يعجب أحدهم بمنشوراتك أو يرد عليها، ستظهر هنا.',

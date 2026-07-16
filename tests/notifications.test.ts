@@ -49,6 +49,29 @@ describe('getNotifications', () => {
     expect(notifs[1].targetText).toBe('my post')
   })
 
+  it('collapses a doubled like into a single notification and links the exact post', async () => {
+    const db = await testDb()
+    const me = generateIdentity()
+    const alice = generateIdentity()
+
+    const mine = makeChain(me, [{ type: 'post', content: { text: 'my post' } }])
+    await ingest(db, mine)
+    const myPostId = msgId(mine[0])
+
+    // Alice's client double-fires the same 👍 on my post.
+    const aliceChain = makeChain(alice, [
+      { type: 'reaction', content: { target: myPostId, emoji: '👍' } },
+      { type: 'reaction', content: { target: myPostId, emoji: '👍' } },
+    ])
+    await ingest(db, aliceChain)
+
+    const notifs = await getNotifications(db, me.pub, 50)
+    expect(notifs).toHaveLength(1)
+    expect(notifs[0].kind).toBe('like')
+    // The notification deep-links to the exact post that was liked.
+    expect(notifs[0].targetId).toBe(myPostId)
+  })
+
   it('does not notify me about my own likes or replies', async () => {
     const db = await testDb()
     const me = generateIdentity()

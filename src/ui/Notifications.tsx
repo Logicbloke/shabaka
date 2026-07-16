@@ -43,7 +43,7 @@ export function NotificationBody({ n }: { n: Notification }) {
       <button
         className="notif-excerpt link"
         dir="auto"
-        onClick={() => navigate({ name: 'thread', root: n.rootId })}
+        onClick={() => navigate({ name: 'thread', root: n.rootId, focus: n.targetId })}
       >
         {n.kind === 'reply' && <span className="notif-on">{t('notifOnPost')} </span>}
         {excerpt(n.targetText)}

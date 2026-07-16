@@ -32,7 +32,7 @@ import type {
 
 export type View =
   | { name: 'feed' }
-  | { name: 'thread'; root: string }
+  | { name: 'thread'; root: string; focus?: string }
   | { name: 'profile'; author: string }
   | { name: 'follows' }
   | { name: 'notifications' }
@@ -69,6 +69,8 @@ interface AppState {
   peers: Record<string, { state: StrategyState; peerCount: number }>
   /** unread notifications (likes + replies to me); maintained by state/badge.ts */
   notifUnread: number
+  /** unread DMs addressed to me; maintained by state/badge.ts */
+  dmUnread: number
   lang: Lang
 }
 
@@ -79,6 +81,7 @@ export const useApp = create<AppState>(() => ({
   dataVersion: 0,
   peers: {},
   notifUnread: 0,
+  dmUnread: 0,
   lang: detectLang(),
 }))
 

@@ -104,10 +104,14 @@ function applyCount(n: number): void {
   }
 }
 
-/** Publish the in-app notifications count, but only when it actually changes —
- * writing state unconditionally would re-trigger our own store subscription. */
+/** Publish an in-app count, but only when it actually changes — writing state
+ * unconditionally would re-trigger our own store subscription. */
 function setNotifUnread(n: number): void {
   if (useApp.getState().notifUnread !== n) useApp.setState({ notifUnread: n })
+}
+
+function setDmUnread(n: number): void {
+  if (useApp.getState().dmUnread !== n) useApp.setState({ dmUnread: n })
 }
 
 async function recompute(): Promise<void> {
@@ -115,12 +119,14 @@ async function recompute(): Promise<void> {
   if (!id) {
     applyCount(0)
     setNotifUnread(0)
+    setDmUnread(0)
     return
   }
   try {
     const counts = await withDb((db) => countUnread(db, id.pub, cursors))
     applyCount(counts.total)
     setNotifUnread(counts.likes + counts.replies)
+    setDmUnread(counts.dms)
   } catch {
     // DB not ready / transient failure — leave the current badge as-is
   }

@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
-import { getProfile, getReactions, getThread } from '../core/db'
+import { useEffect, useRef, useState } from 'react'
+import { getFollows, getProfile, getReactions, getThread } from '../core/db'
+import { dedupeReactions } from '../core/reactions'
 import { loadVoiceBytes, navigate, postUrl, reactTo, useApp } from '../state/store'
 import { shortKey, useQuery } from './hooks'
 import { TimeStamp } from './TimeStamp'
@@ -58,10 +59,19 @@ export function AuthorLink({ author, hideKey }: { author: string; hideKey?: bool
   )
 }
 
-export function PostCard({ msg, inThread }: { msg: StoredMessage; inThread?: boolean }) {
+export function PostCard({
+  msg,
+  inThread,
+  focused,
+}: {
+  msg: StoredMessage
+  inThread?: boolean
+  focused?: boolean
+}) {
   const me = useApp((s) => s.identity)!
   const t = useT()
   const reactions = useQuery((db) => getReactions(db, msg.id), [msg.id])
+  const follows = useQuery((db) => getFollows(db, me.pub), [me.pub])
   const replies = useQuery(
     (db) => (msg.type === 'post' ? getThread(db, msg.id) : Promise.resolve([])),
     [msg.id, msg.type],
@@ -69,21 +79,38 @@ export function PostCard({ msg, inThread }: { msg: StoredMessage; inThread?: boo
 
   const [linkCopied, setLinkCopied] = useState(false)
 
+  // Scroll to and briefly highlight the post a notification deep-linked to.
+  const ref = useRef<HTMLElement>(null)
+  useEffect(() => {
+    if (focused) ref.current?.scrollIntoView({ block: 'center' })
+  }, [focused])
+
   const text = cleanText((msg.content as { text?: string }).text ?? '')
   const rootId = msg.type === 'reply' ? (msg.content as ReplyContent).root : msg.id
   const url = postUrl(rootId)
 
+  // One reaction per (author, emoji) — a forked or misbehaving client can emit
+  // the same "like" twice, and we don't want to count it twice.
+  const unique = dedupeReactions(reactions ?? [])
   const counts = new Map<string, number>()
-  for (const r of reactions ?? []) {
+  for (const r of unique) {
     const emoji = cleanText((r.content as { emoji: string }).emoji)
     if (!emoji) continue
     counts.set(emoji, (counts.get(emoji) ?? 0) + 1)
   }
-  const iReacted = (reactions ?? []).some((r) => r.author === me.pub)
+  const iReacted = unique.some((r) => r.author === me.pub)
   const likes = counts.get('👍') ?? 0
 
+  // Name the people I follow who liked this — for everyone else I only have a
+  // bare key, so they stay part of the count without being called out.
+  const following = new Set((follows ?? []).filter((f) => f.following).map((f) => f.target))
+  const likers = unique
+    .filter((r) => (r.content as { emoji: string }).emoji === '👍')
+    .map((r) => r.author)
+    .filter((a) => a !== me.pub && following.has(a))
+
   return (
-    <article className="post">
+    <article className={focused ? 'post post-focused' : 'post'} ref={ref}>
       <div className="post-head">
         <AuthorLink author={msg.author} hideKey />
         <TimeStamp ts={msg.displayTs} />
@@ -144,6 +171,17 @@ export function PostCard({ msg, inThread }: { msg: StoredMessage; inThread?: boo
           </a>
         )}
       </div>
+      {likers.length > 0 && (
+        <div className="reaction-likers">
+          <span className="likers-label">👍 {t('likedBy')} </span>
+          {likers.map((a, i) => (
+            <span key={a}>
+              {i > 0 && ', '}
+              <AuthorLink author={a} hideKey />
+            </span>
+          ))}
+        </div>
+      )}
     </article>
   )
 }

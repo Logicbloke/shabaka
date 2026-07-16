@@ -30,7 +30,7 @@ function Main() {
   const view = useApp((s) => s.view)
   switch (view.name) {
     case 'thread':
-      return <Thread root={view.root} />
+      return <Thread root={view.root} focus={view.focus} />
     case 'profile':
       return <Profile author={view.author} />
     case 'follows':
@@ -52,6 +52,7 @@ export function App() {
   const phase = useApp((s) => s.phase)
   const identity = useApp((s) => s.identity)
   const notifUnread = useApp((s) => s.notifUnread)
+  const dmUnread = useApp((s) => s.dmUnread)
   const t = useT()
 
   if (phase !== 'ready' || !identity) {
@@ -73,7 +74,10 @@ export function App() {
             {t('navNotifications')}
             {notifUnread > 0 && <span className="nav-badge">{notifUnread}</span>}
           </button>
-          <button onClick={() => navigate({ name: 'dms' })}>{t('navDms')}</button>
+          <button onClick={() => navigate({ name: 'dms' })}>
+            {t('navDms')}
+            {dmUnread > 0 && <span className="nav-badge">{dmUnread}</span>}
+          </button>
           <button onClick={() => navigate({ name: 'profile', author: identity.pub })}>
             {t('navMe')}
           </button>

@@ -47,6 +47,26 @@ describe('countUnread', () => {
     expect(counts.total).toBe(4)
   })
 
+  it('counts a doubled like on my post only once', async () => {
+    const db = await testDb()
+    const me = generateIdentity()
+    const alice = generateIdentity()
+
+    const mine = makeChain(me, [{ type: 'post', content: { text: 'hello' } }])
+    await ingest(db, mine)
+    const myPostId = msgId(mine[0])
+
+    // Alice's client fires the same 👍 twice — one unread like, not two.
+    const aliceChain = makeChain(alice, [
+      { type: 'reaction', content: { target: myPostId, emoji: '👍' } },
+      { type: 'reaction', content: { target: myPostId, emoji: '👍' } },
+    ])
+    await ingest(db, aliceChain)
+
+    const counts = await countUnread(db, me.pub, ZERO_CURSORS)
+    expect(counts.likes).toBe(1)
+  })
+
   it('ignores my own messages', async () => {
     const db = await testDb()
     const me = generateIdentity()
